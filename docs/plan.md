@@ -30,9 +30,17 @@ All 21 security issues and code quality improvements have been resolved:
 
 ---
 
-## 🎯 Future Roadmap
+## 🎯 Current Priority: GTK3 Migration
 
-### Phase 1: GTK3 Migration (High Priority)
+**Status**: Planned and ready to start  
+**Plan**: See `docs/gtk3-migration-plan.md` for complete step-by-step guide  
+**Estimated Effort**: 2-3 weeks  
+**Risk**: High (complex API changes)
+
+### Next Session Prompt
+> Start the GTK2 to GTK3 migration following `docs/gtk3-migration-plan.md`. Begin with Phase 1: Build System Preparation. Update Makefile to use gtk+-3.0, fix header includes, and identify all deprecated API usage.
+
+### Phase 1: GTK3 Migration (In Progress)
 
 **Background**: Pho currently uses GTK+ 2.0 which is deprecated and no longer maintained. Migration to GTK3 is essential for long-term viability.
 
