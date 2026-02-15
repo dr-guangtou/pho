@@ -62,30 +62,27 @@ static void MoveWin2Monitor(int whichmon, int x, int y);
 
 static void hide_cursor(GtkWidget* w)
 {
-    static char invisible_cursor_bits[] = { 0x0 };
-    static GdkBitmap *empty_bitmap = 0;
     static GdkCursor* cursor = 0;
 
-    if (empty_bitmap == 0 || cursor == 0) {
-        empty_bitmap = gdk_bitmap_create_from_data(NULL,
-                                                   invisible_cursor_bits,
-                                                   1, 1);
-        cursor = gdk_cursor_new_from_pixmap (empty_bitmap, empty_bitmap,
-                                             &sBlack, &sBlack, 1, 1);
+    if (cursor == 0) {
+        /* GTK3: Create invisible cursor using Cairo surface */
+        cairo_surface_t *surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1, 1);
+        cairo_t *cr = cairo_create(surface);
+        cairo_set_source_rgba(cr, 0, 0, 0, 0);  /* Transparent */
+        cairo_paint(cr);
+        cursor = gdk_cursor_new_from_surface(gdk_display_get_default(), surface, 0, 0);
+        cairo_destroy(cr);
+        cairo_surface_destroy(surface);
     }
 
-    if (w->window != NULL)
-        gdk_window_set_cursor(w->window, cursor);
-
-    /* If we need to free this, do it this way:
-    gdk_cursor_unref(cursor);
-    g_object_unref(empty_bitmap);
-     */
+    GdkWindow *window = gtk_widget_get_window(w);
+    if (window != NULL)
+        gdk_window_set_cursor(window, cursor);
 }
 
 static void show_cursor(GtkWidget* w)
 {
-    gdk_window_set_cursor(w->window, NULL);
+    gdk_window_set_cursor(gtk_widget_get_window(w), NULL);
 }
 
 /*
@@ -102,14 +99,15 @@ static void AdjustScreenSize()
         gMonitorHeight = gPhysMonitorHeight;
     }
     else {
-        if (!sHaveFrameSize && GTK_WIDGET_MAPPED(gWin)) {
+        if (!sHaveFrameSize && gtk_widget_get_mapped(gWin)) {
             gint width, height;
             GdkRectangle rect;
 
             if (gDebug)
                 printf("AdjustScreenSize: Requesting frame size\n");
-            gdk_drawable_get_size(gWin->window, &width, &height);
-            gdk_window_get_frame_extents(gWin->window, &rect);
+            width = gtk_widget_get_allocated_width(gWin);
+            height = gtk_widget_get_allocated_height(gWin);
+            gdk_window_get_frame_extents(gtk_widget_get_window(gWin), &rect);
             sFrameWidth = rect.width - width;
             sFrameHeight = rect.height - height;
             sHaveFrameSize = 1;
@@ -153,7 +151,7 @@ static void MaybeMove()
         return;
 
     /* If we don't have a window yet, don't move it */
-    if (!gWin || !GTK_WIDGET_MAPPED(gWin))
+    if (!gWin || !gtk_widget_get_mapped(gWin))
         return;
 
     /* If we're in presentation or keywords mode, never move the window */
@@ -244,7 +242,7 @@ int SetViewModes(int dispmode, int scalemode, double scalefactor)
 
     if (dispmode != gDisplayMode) {
         gDisplayMode = dispmode;
-        if (gWin && sDrawingArea && GTK_WIDGET_MAPPED(gWin))
+        if (gWin && sDrawingArea && gtk_widget_get_mapped(gWin))
             /* Changing an existing window */
         {
             if (dispmode == PHO_DISPLAY_PRESENTATION) {
@@ -306,11 +304,15 @@ void DrawImage()
 
     if (gImage == 0 || gWin == 0 || sDrawingArea == 0) return;
     if (!sExposed) return;
-    if (!GTK_WIDGET_MAPPED(gWin)) return;
+    if (!gtk_widget_get_mapped(gWin)) return;
 
     if (gDisplayMode == PHO_DISPLAY_PRESENTATION) {
         gint width, height;
-        gdk_window_clear(sDrawingArea->window);
+        /* GTK3: Use cairo to clear window background */
+        cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(sDrawingArea));
+        cairo_set_source_rgb(cr, 0, 0, 0);
+        cairo_paint(cr);
+        cairo_destroy(cr);
 
         /* Center the image. This has to be done according to
          * the current window size, not the phys monitor size,
@@ -419,11 +421,11 @@ void DrawImage()
         }
     }
 
-    gdk_pixbuf_render_to_drawable(gImage, sDrawingArea->window,
-                   sDrawingArea->style->fg_gc[GTK_WIDGET_STATE(sDrawingArea)],
-                                  0, 0, dstX, dstY,
-                                  gCurImage->curWidth, gCurImage->curHeight,
-                                  GDK_RGB_DITHER_NONE, 0, 0);
+    /* GTK3: Use Cairo for drawing */
+    cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(sDrawingArea));
+    gdk_cairo_set_source_pixbuf(cr, gImage, dstX, dstY);
+    cairo_paint(cr);
+    cairo_destroy(cr);
 
     UpdateInfoDialog(gCurImage);
 }
@@ -468,7 +470,9 @@ HandleMotionNotify(GtkWidget *widget, GdkEventMotion *event)
 #define DRAGRESTART 3
     int x, y;
     GdkModifierType state;
-    gdk_window_get_pointer (widget->window, &x, &y, &state);
+    /* GTK3: Use gdk_window_get_device_position instead */
+    GdkDevice *device = gdk_event_get_device((GdkEvent*)event);
+    gdk_window_get_device_position(gtk_widget_get_window(widget), device, &x, &y, &state);
 
     if (state & GDK_BUTTON2_MASK) {
         sDragOffsetX += x - sDragStartX;
@@ -511,7 +515,7 @@ HandleMotionNotify(GtkWidget *widget, GdkEventMotion *event)
             /* If we've hit an edge of the screen, warp to the opposite edge */
             if (warpToX >= 0 && warpToY >= 0) {
                 gdk_display_warp_pointer(gtk_widget_get_display(widget),
-                                         gdk_drawable_get_screen(sDrawingArea->window),
+                                         gtk_widget_get_screen(sDrawingArea),
                                          warpToX, warpToY);
                 sDragStartX = warpToX;
                 sDragStartY = warpToY;
@@ -525,30 +529,23 @@ HandleMotionNotify(GtkWidget *widget, GdkEventMotion *event)
     return TRUE;
 }
 
-/* An expose event has a GdkRectangle area and a GdkRegion *region
- * as well as gint count of subsequent expose events.
- * Unfortunately count is always 0.
+/* GTK3: "draw" signal handler replaces "expose_event"
+ * The draw signal provides a cairo_t for rendering.
  */
-static gint HandleExpose(GtkWidget* widget, GdkEventExpose* event)
+static gboolean HandleExpose(GtkWidget* widget, cairo_t *cr)
 {
     gint width, height;
 
     sExposed = 1;
-    gdk_drawable_get_size(widget->window, &width, &height);
+    width = gtk_widget_get_allocated_width(widget);
+    height = gtk_widget_get_allocated_height(widget);
     if (gDebug) {
-        printf("HandleExpose: area %dx%d +%d+%d in window %dx%d\n",
-               event->area.width, event->area.height,
-               event->area.x, event->area.y,
+        cairo_rectangle_int_t clip_rect;
+        gdk_cairo_get_clip_rectangle(cr, (GdkRectangle*)&clip_rect);
+        printf("HandleExpose: clip %dx%d +%d+%d in window %dx%d\n",
+               clip_rect.width, clip_rect.height,
+               clip_rect.x, clip_rect.y,
                width, height);
-        if ((gDisplayMode != PHO_DISPLAY_PRESENTATION) &&
-            (event->area.x != 0 || event->area.y != 0)) {
-            if (event->area.width != width || event->area.height != height)
-                printf("*** Expose different from window size!\n");
-            if (event->area.width != gCurImage->curWidth ||
-                event->area.height != gCurImage->curHeight)
-                printf("** Expose different from actual image size of %dx%d!\n",
-                       gCurImage->curWidth, gCurImage->curHeight);
-        }
     }
 
     /* If a specific monitor was specified, move the window now.
@@ -560,7 +557,7 @@ static gint HandleExpose(GtkWidget* widget, GdkEventExpose* event)
      */
     if (gUseMonitor >= 0) {
         gint root_x, root_y;
-        gdk_window_get_position(gWin->window, &root_x, &root_y);
+        gdk_window_get_position(gtk_widget_get_window(gWin), &root_x, &root_y);
         /*
         printf("HandleExpose: moving to monitor %d\n", gUseMonitor);
         MoveWin2Monitor(gUseMonitor, root_x, root_y);
@@ -620,13 +617,13 @@ static gint HandleDelete(GtkWidget* widget, GdkEventKey* event, gpointer data)
 /* Move to a specific monitor */
 void MoveWin2Monitor(int whichmon, int x, int y)
 {
-    if (! gWin->window) {
+    if (!gtk_widget_get_realized(gWin)) {
         if (gDebug)
             printf("MoveWin2Monitor: no window yet, can't set monitor\n");
         return;
     }
 
-    GdkScreen* screen = gdk_drawable_get_screen(gWin->window);
+    GdkScreen* screen = gtk_widget_get_screen(gWin);
     gint nMonitors = gdk_screen_get_n_monitors(screen);
     GdkRectangle rect;
     if (gDebug) {
@@ -659,8 +656,8 @@ static void NewWindow()
         printf("NewWindow()\n");
 
     if (gWin) {
-        gdk_window_get_position(gWin->window, &root_x, &root_y);
-        gtk_object_destroy(GTK_OBJECT(gWin));
+        gdk_window_get_position(gtk_widget_get_window(gWin), &root_x, &root_y);
+        gtk_widget_destroy(gWin);
     }
 
     gWin = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -668,8 +665,8 @@ static void NewWindow()
     gtk_window_set_wmclass(GTK_WINDOW(gWin), "pho", "Pho");
 
     /* Window manager delete */
-    gtk_signal_connect(GTK_OBJECT(gWin), "delete_event",
-                       (GtkSignalFunc)HandleDelete, 0);
+    g_signal_connect(G_OBJECT(gWin), "delete-event",
+                       G_CALLBACK(HandleDelete), 0);
 
     /* This event occurs when we call gtk_widget_destroy() on the window,
      * or if we return FALSE in the "delete_event" callback.
@@ -680,44 +677,48 @@ static void NewWindow()
     /* KeyPress events on the drawing area don't come through --
      * they have to be on the window.
      */
-    gtk_signal_connect(GTK_OBJECT(gWin), "key_press_event",
-                       (GtkSignalFunc)HandleGlobalKeys, 0);
+    g_signal_connect(G_OBJECT(gWin), "key-press-event",
+                       G_CALLBACK(HandleGlobalKeys), 0);
 
     sDrawingArea = gtk_drawing_area_new();
     gtk_container_add(GTK_CONTAINER(gWin), sDrawingArea);
     gtk_widget_show(sDrawingArea);
 
-    /* This can't be done in expose: it causes one of those extra
-     * spurious expose events that gtk so loves.
-     */
-    gtk_widget_modify_bg(sDrawingArea, GTK_STATE_NORMAL, &sBlack);
+    /* GTK3: Use CSS instead of gtk_widget_modify_bg */
+    GtkCssProvider *css_provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(css_provider,
+        "drawingarea { background-color: #000000; }", -1, NULL);
+    gtk_style_context_add_provider(
+        gtk_widget_get_style_context(sDrawingArea),
+        GTK_STYLE_PROVIDER(css_provider),
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
     /* We hope this has already been done: LoadImageAndRotate
      * should have called ScaleAndRotate when the image was loaded.
     AdjustScreenSize();
      */
     if (gDisplayMode == PHO_DISPLAY_PRESENTATION) {
-        gtk_drawing_area_size(GTK_DRAWING_AREA(sDrawingArea),
+        gtk_widget_set_size_request(sDrawingArea,
                               gPhysMonitorWidth, gPhysMonitorHeight);
         gtk_window_fullscreen(GTK_WINDOW(gWin));
 
         /* Listen for middle clicks to drag position: */
         gtk_widget_set_events(sDrawingArea, GDK_BUTTON_PRESS_MASK);
-        gtk_signal_connect(GTK_OBJECT(sDrawingArea), "button_press_event",
-                           (GtkSignalFunc)HandlePress, 0);
-        gtk_signal_connect(GTK_OBJECT(sDrawingArea), "button_release_event",
-                           (GtkSignalFunc)HandleRelease, 0);
-        gtk_signal_connect(GTK_OBJECT(sDrawingArea), "motion_notify_event",
-                           (GtkSignalFunc)HandleMotionNotify, 0);
+        g_signal_connect(G_OBJECT(sDrawingArea), "button-press-event",
+                           G_CALLBACK(HandlePress), 0);
+        g_signal_connect(G_OBJECT(sDrawingArea), "button-release-event",
+                           G_CALLBACK(HandleRelease), 0);
+        g_signal_connect(G_OBJECT(sDrawingArea), "motion-notify-event",
+                           G_CALLBACK(HandleMotionNotify), 0);
     }
     else {
-        gtk_drawing_area_size(GTK_DRAWING_AREA(sDrawingArea),
+        gtk_widget_set_size_request(sDrawingArea,
                               gCurImage->curWidth, gCurImage->curHeight);
         gtk_window_unfullscreen(GTK_WINDOW(gWin));
     }
 
-    gtk_signal_connect(GTK_OBJECT(sDrawingArea), "expose_event",
-                       (GtkSignalFunc)HandleExpose, 0);
+    g_signal_connect(G_OBJECT(sDrawingArea), "draw",
+                       G_CALLBACK(HandleExpose), 0);
     /* To track in/out of fullscreen mode, use configure_event
      * or window_state_event.
      */
@@ -768,21 +769,23 @@ void PrepareWindow()
     /* If the window is new but hasn't been mapped yet,
      * there's nothing we can do from here.
      */
-    if (!GTK_WIDGET_MAPPED(gWin))
+    if (!gtk_widget_get_mapped(gWin))
         return;
 
     /* Otherwise, resize and reposition the current window. */
 
     if (gDisplayMode == PHO_DISPLAY_PRESENTATION) {
         /* XXX shouldn't have to do this every time */
-        gtk_drawing_area_size(GTK_DRAWING_AREA(sDrawingArea),
+        gtk_widget_set_size_request(sDrawingArea,
                               gPhysMonitorWidth, gPhysMonitorHeight);
     }
     else {
         gint winwidth, winheight;
 
-        gdk_drawable_get_size(gWin->window, &winwidth, &winheight);
-        gdk_drawable_get_size(sDrawingArea->window, &winwidth, &winheight);
+        winwidth = gtk_widget_get_allocated_width(gWin);
+        winheight = gtk_widget_get_allocated_height(gWin);
+        winwidth = gtk_widget_get_allocated_width(sDrawingArea);
+        winheight = gtk_widget_get_allocated_height(sDrawingArea);
 
         /* We need to size the actual window, not just the drawing area.
          * Resizing the drawing area will resize the window for many
@@ -822,7 +825,8 @@ void PrepareWindow()
              * case where there will be no further events. But if there
              * are further events, we want to wait for them and not
              */
-            gdk_drawable_get_size(sDrawingArea->window, &winwidth, &winheight);
+            winwidth = gtk_widget_get_allocated_width(sDrawingArea);
+            winheight = gtk_widget_get_allocated_height(sDrawingArea);
             if (gCurImage->curWidth != winwidth
                 || gCurImage->curHeight != winheight) {
                 if (gDebug)
@@ -838,7 +842,7 @@ void PrepareWindow()
          * plus in keywords mode, the keywords dialog gets set as
          * transient too early. (I hate window management.)
          */
-        else if (GTK_WIDGET_VISIBLE(gWin)) {
+        else if (gtk_widget_get_visible(gWin)) {
             DrawImage();
         }
 

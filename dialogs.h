@@ -31,5 +31,5 @@ extern void KeepOnTop(GtkWidget* dialog);
  */
 extern GtkWidget *gWin;
 
-#define IsVisible(dlg)  (dlg && dlg->window && (GTK_WIDGET_FLAGS(dlg) & GTK_VISIBLE))
+#define IsVisible(dlg)  (dlg && gtk_widget_get_visible(dlg))
 

@@ -60,7 +60,7 @@ static void UpdateImage()
     unsigned mask, flags;
     char* text;
 
-    if (!InfoDialog || !InfoDialog->window || !IsVisible(InfoDialog)
+    if (!InfoDialog || !gtk_widget_get_visible(InfoDialog)
         || !sCurInfoImage)
         return;
 
@@ -97,7 +97,7 @@ void UpdateInfoDialog()
     char* s;
     int i, mask, flags;
 
-    if (!gCurImage || !InfoDialog || !InfoDialog->window)
+    if (!gCurImage || !InfoDialog || !gtk_widget_get_visible(InfoDialog))
         /* Don't need to check whether it's visible -- if we're not
          * about to show the dialog we shouldn't be calling this anyway.
          */
@@ -171,18 +171,20 @@ void UpdateInfoDialog()
         if (HasExif()) {
             gtk_entry_set_text(GTK_ENTRY(InfoExifEntries[i]),
                                ExifGetString(i));
-            gtk_entry_set_editable(GTK_ENTRY(InfoExifEntries[i]), FALSE);
+            gtk_editable_set_editable(GTK_EDITABLE(InfoExifEntries[i]), FALSE);
         }
         else {
             gtk_entry_set_text(GTK_ENTRY(InfoExifEntries[i]), " ");
-            gtk_entry_set_editable(GTK_ENTRY(InfoExifEntries[i]), FALSE);
+            gtk_editable_set_editable(GTK_EDITABLE(InfoExifEntries[i]), FALSE);
         }
     }
 }
 
 static gint InfoDialogExpose(GtkWidget* widget, GdkEventKey* event)
 {
-    g_signal_handler_block(G_OBJECT(InfoDialog),
+    /* Note: In GTK3, signal handlers are blocked by ID not by function.
+     * We'll use g_signal_handlers_block_by_func which exists for compatibility */
+    g_signal_handlers_block_by_func(G_OBJECT(InfoDialog),
                                      (GCallback)InfoDialogExpose, 0);
     gtk_widget_grab_focus(InfoDEntry);
     if (gDebug)
@@ -229,9 +231,9 @@ void ToggleInfo()
 
     if (gDebug) printf("ToggleInfo\n");
 
-    if (InfoDialog && InfoDialog->window)
+    if (InfoDialog && gtk_widget_get_realized(InfoDialog))
     {
-        if (GTK_WIDGET_FLAGS(InfoDialog) & GTK_VISIBLE)
+        if (gtk_widget_get_visible(InfoDialog))
             gtk_widget_hide(InfoDialog);
         else {
             UpdateInfoDialog(gCurImage);
@@ -257,19 +259,19 @@ void ToggleInfo()
                        TRUE, TRUE, 0);
     gtk_widget_show (scroller);
 
-    vbox = gtk_vbox_new(FALSE, 3);
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
     gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW (scroller),
                                           vbox);
     gtk_widget_show(vbox);
 #else /* SCROLLER */
-    vbox = GTK_DIALOG(InfoDialog)->vbox;
+    vbox = gtk_dialog_get_content_area(GTK_DIALOG(InfoDialog));
 #endif /* SCROLLER */
 
     gtk_container_set_border_width(GTK_CONTAINER(vbox), 8);
 
     /* Make the button */
     ok = gtk_button_new_with_label("Ok");
-    gtk_box_pack_start(GTK_BOX(GTK_DIALOG(InfoDialog)->action_area),
+    gtk_box_pack_start(GTK_BOX(gtk_dialog_get_action_area(GTK_DIALOG(InfoDialog))),
                        ok, TRUE, TRUE, 0);
     g_signal_connect(G_OBJECT(ok), "clicked",
                        G_CALLBACK(PopdownInfoDialog), 0);
@@ -393,23 +395,23 @@ HandlePromptKeyPress(GtkWidget* widget, GdkEventKey* event)
 {
     char c;
 
-    if (event->keyval == GDK_Escape)
+    if (event->keyval == GDK_KEY_Escape)
     {
         gtk_dialog_response(GTK_DIALOG(promptDialog), 0);
         return TRUE;
     }
 
-    if (event->keyval == GDK_space)
+    if (event->keyval == GDK_KEY_space)
         c = ' ';
 
-    else if (event->keyval >= GDK_A && event->keyval <= GDK_Z)
-        c = event->keyval - GDK_A + 'A';
+    else if (event->keyval >= GDK_KEY_A && event->keyval <= GDK_KEY_Z)
+        c = event->keyval - GDK_KEY_A + 'A';
 
-    else if (event->keyval >= GDK_a && event->keyval <= GDK_z)
-        c = event->keyval - GDK_a + 'a';
+    else if (event->keyval >= GDK_KEY_a && event->keyval <= GDK_KEY_z)
+        c = event->keyval - GDK_KEY_a + 'a';
 
-    else if (event->keyval >= GDK_0 && event->keyval <= GDK_9)
-        c = event->keyval - GDK_0 + '0';
+    else if (event->keyval >= GDK_KEY_0 && event->keyval <= GDK_KEY_9)
+        c = event->keyval - GDK_KEY_0 + '0';
 
     else {
         gdk_beep();
@@ -470,7 +472,7 @@ int Prompt(char* msg, char* yesStr, char* noStr, char* yesChars, char* noChars)
 
         /* Make the label: */
         question = gtk_label_new(msg);
-        gtk_box_pack_start(GTK_BOX(GTK_DIALOG(promptDialog)->vbox),
+        gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(promptDialog))),
                            question, TRUE, TRUE, 15);
         gtk_widget_show(question);
     }

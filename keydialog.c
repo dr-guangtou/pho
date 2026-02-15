@@ -235,7 +235,7 @@ static void MakeNewKeywordsDialog()
     sep = gtk_hseparator_new();
     gtk_container_add(GTK_CONTAINER(dlg_vbox), sep);
     gtk_widget_show(sep);
-    btn_box = gtk_hbox_new(FALSE, 3);
+    btn_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
     gtk_container_add(GTK_CONTAINER(dlg_vbox), btn_box);
     gtk_container_set_border_width(GTK_CONTAINER(btn_box), 20);
     gtk_widget_show(btn_box);
@@ -260,7 +260,7 @@ static void MakeNewKeywordsDialog()
     gtk_widget_show(label);
 
     /* Add the caption field */
-    hbox = gtk_hbox_new(FALSE, 3);
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
     gtk_box_pack_start(GTK_BOX(KeywordsContainer), hbox,
                        TRUE, TRUE, 4);
     label = gtk_label_new("Caption:");
