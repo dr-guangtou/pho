@@ -128,6 +128,20 @@ static char* CapFileName(PhoImage* img)
     /* How much ram do we need for the caption filename? */
     static char buf[BUFSIZ];
     int caplength = snprintf(buf, BUFSIZ, gCapFileFormat, img->filename);
+    
+    /* Check for truncation - if caplength >= BUFSIZ, the buffer was truncated.
+     * Also ensure null-termination for safety.
+     */
+    if (caplength < 0) {
+        fprintf(stderr, "Error formatting caption filename\n");
+        return 0;
+    }
+    if ((size_t)caplength >= BUFSIZ) {
+        fprintf(stderr, "Caption filename too long (exceeds %d bytes). Bailing!\n", BUFSIZ);
+        return 0;
+    }
+    buf[BUFSIZ-1] = '\0';  /* Ensure null termination */
+    
     if (strncmp(img->filename, buf, caplength) == 0) {
         fprintf(stderr,
            "Caption filename expanded to same as image filename. Bailing!\n");

@@ -38,10 +38,11 @@ See `docs/test-review.md` for detailed analysis.
 ### 2. Buffer Overflow in CapFileName()
 - **File**: `imagenote.c:126-137`
 - **Type**: Security - Buffer overflow
-- **Issue**: Static buffer can overflow with malicious format string
-- **Impact**: Crash with crafted caption format
-- **Fix**: Check `snprintf()` return value, handle truncation
-- **Status**: ⬜ Open
+- **Issue**: Static buffer can overflow with malicious format string; `snprintf()` return value not checked
+- **Impact**: Crash with crafted caption format, potential buffer overflow with long filenames
+- **Fix**: Added truncation check, ensure null-termination, return error if buffer too small
+- **Status**: ✅ **FIXED** - Verified by regression/test_issue_2
+- **Commit**: Added bounds checking and truncation detection to CapFileName()
 
 ### 3. Non-Terminating strncpy() in EXIF Parser
 - **File**: `exif/exif.c:429-466`
@@ -55,10 +56,11 @@ See `docs/test-review.md` for detailed analysis.
 ### 4. Buffer Overflow in process_COM()
 - **File**: `exif/jpgfile.c:59-89`
 - **Type**: Security - Buffer overflow
-- **Issue**: `strcpy()` from 2001-byte buffer to 2000-byte buffer
-- **Impact**: 1-byte overflow
-- **Fix**: Use `strncpy()` with proper bounds
-- **Status**: ⬜ Open
+- **Issue**: `strcpy()` from 2001-byte buffer to 2000-byte buffer (MAX_COMMENT+1 to MAX_COMMENT)
+- **Impact**: 1-byte overflow when comment is exactly MAX_COMMENT characters
+- **Fix**: Use `strncpy()` with `MAX_COMMENT-1` bounds, ensure null-termination
+- **Status**: ✅ **FIXED** - Verified by regression/test_issue_4
+- **Commit**: Replaced strcpy with strncpy in process_COM to prevent 1-byte overflow
 
 ### 5. Uninitialized Variable in ScaleToFit()
 - **File**: `pho.c:318-377`
@@ -196,6 +198,16 @@ See `docs/test-review.md` for detailed analysis.
 
 ## ✅ Recently Fixed
 
+### Buffer Overflow in CapFileName() - Issue #2
+- **File**: `imagenote.c`
+- **Fixed**: 2026-02-15
+- **Changes**: Added snprintf truncation check, null-termination guarantee
+
+### Buffer Overflow in process_COM() - Issue #4
+- **File**: `exif/jpgfile.c`
+- **Fixed**: 2026-02-15
+- **Changes**: Replaced strcpy with strncpy to prevent 1-byte overflow
+
 ### Buffer Overflow - sprintf to snprintf
 - **Files**: `pho.c`, `gdialogs.c`, `gwin.c`
 - **Fixed**: 2026-02-15
@@ -210,6 +222,26 @@ See `docs/test-review.md` for detailed analysis.
 - **File**: `pho.c`
 - **Fixed**: 2026-02-15
 - **Changes**: Fisher-Yates with rejection sampling
+
+### Title Construction Buffer Overflow - Issue #1
+- **File**: `gwin.c`
+- **Fixed**: 2026-02-15
+- **Changes**: Replaced strcat with strncat
+
+### EXIF strncpy Null Termination - Issue #3
+- **File**: `exif/exif.c`
+- **Fixed**: 2026-02-15
+- **Changes**: Added null termination after strncpy calls
+
+### Uninitialized Variable in ScaleToFit() - Issue #5
+- **File**: `pho.c`
+- **Fixed**: 2026-02-15
+- **Changes**: Added else clause for no-scaling case
+
+### Slideshow Logic Error - Issue #6
+- **File**: `pho.c`
+- **Fixed**: 2026-02-15
+- **Changes**: Changed || to && for end-of-list detection
 
 ---
 
@@ -226,6 +258,8 @@ See `docs/test-review.md` for detailed analysis.
 | 2026-02-15 | **FIXED Issue #6** | Slideshow logic error - changed || to &&, all tests pass |
 | 2026-02-15 | **FIXED Issue #3** | strncpy null termination in EXIF parser - 5 locations fixed |
 | 2026-02-15 | **FIXED Issue #1** | Title buffer overflow - replaced strcat with strncat |
+| 2026-02-15 | **FIXED Issue #2** | CapFileName buffer overflow - added truncation checks |
+| 2026-02-15 | **FIXED Issue #4** | process_COM buffer overflow - replaced strcpy with strncpy |
 
 ---
 

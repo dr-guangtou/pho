@@ -85,7 +85,11 @@ static void process_COM (const uchar * Data, int length)
         printf("COM marker comment: %s\n",Comment);
     }
 
-    strcpy(ImageInfo.Comments,Comment);
+    /* Use strncpy to prevent overflow - ImageInfo.Comments is MAX_COMMENT bytes,
+     * but Comment buffer is MAX_COMMENT+1 bytes, so we need bounds checking.
+     */
+    strncpy(ImageInfo.Comments, Comment, MAX_COMMENT-1);
+    ImageInfo.Comments[MAX_COMMENT-1] = '\0';  /* Ensure null termination */
 }
 
  
