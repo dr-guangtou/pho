@@ -1,5 +1,13 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 /*
+ * NOTE: This is a standalone test utility that requires GTK3 migration.
+ * It is NOT part of the main pho build (see Makefile).
+ * To use this on modern systems, update to GTK3 APIs:
+ *   - Replace gdk_screen_width/height with gdk_monitor_get_geometry
+ *   - Replace gtk_signal_connect with g_signal_connect
+ *   - Replace GTK_OBJECT/GTK_SIGNAL_FUNC with G_OBJECT/G_CALLBACK
+ *   - Replace GdkEventExpose with draw signal and cairo_t
+ *
  * Test of focus.
  *
  * This program tests whether focus reverts to another window when

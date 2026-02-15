@@ -1,5 +1,16 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 /*
+ * NOTE: This is a standalone test utility for X11-specific code.
+ * It is NOT part of the main pho build (see Makefile - commented out).
+ * To use this on modern systems, update to GTK3 APIs:
+ *   - Replace gdk_screen_width/height with gdk_monitor_get_geometry
+ *   - Replace gtk_signal_connect with g_signal_connect
+ *   - Replace GTK_OBJECT/GTK_SIGNAL_FUNC with G_OBJECT/G_CALLBACK
+ *   - Replace GdkEventExpose with draw signal and cairo_t
+ *   - Replace gdk_drawable_get_size with gtk_widget_get_allocated_width/height
+ *   - Replace widget->window with gtk_widget_get_window(widget)
+ * Note: X11-specific code (gdkx.h) may need platform-specific handling.
+ *
  * xstuff.c: assorted X11-specific routines for pho.
  *
  * Most of this comes from 

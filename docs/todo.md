@@ -1,65 +1,45 @@
 # Pho Project Status
 
 **Last Updated**: 2026-02-15  
-**Status**: ✅ GTK3 MIGRATION COMPLETE - ALL TESTS PASSING
+**Status**: ✅ GTK3 MIGRATION COMPLETE
 
 ---
 
-## Migration Summary
+## ✅ Completed: GTK3 Migration (2026-02-15)
 
-### ✅ All Phases Complete
+### Migration Summary
 
 **Branch**: `gtk3-migration-phase1`  
 **Build Status**: ✅ SUCCESS  
 **Test Status**: ✅ **50/50 PASSING**  
+**Runtime Status**: ✅ VERIFIED  
 **GTK Version**: 3.24.51  
 **Binary**: `pho` (130KB, Mach-O 64-bit ARM64)
 
 ---
 
-## Completed Work
+### All Phases Complete ✅
 
-### Phase 1: Build System ✅
-- Updated Makefile (gtk+-2.0 → gtk+-3.0)
-- Updated pho.h headers
-- Installed GTK3 via Homebrew
-- Identified 47 deprecated API errors
+| Phase | Description | Status |
+|-------|-------------|--------|
+| 1 | Build System | ✅ Makefile, pkg-config, headers |
+| 2 | Signals & Keys | ✅ 52 key symbols, signal connections |
+| 3 | Widget Accessors | ✅ All struct access updated |
+| 4 | Cairo Drawing | ✅ Full GDK→Cairo migration |
+| 5 | Monitor API | ✅ Multi-monitor support |
+| 6 | Final Cleanup | ✅ 0 GTK deprecation warnings |
 
-### Phase 2: Signal & Key Symbols ✅
-- 52 key symbols updated (GDK_KEY_*)
-- gtk_signal_connect → g_signal_connect
-- GTK_OBJECT → G_OBJECT, GTK_SIGNAL_FUNC → G_CALLBACK
-- Signal names: expose_event → draw, key_press_event → key-press-event
+### Key Changes
 
-### Phase 3: Widget Accessors ✅
-- widget->window → gtk_widget_get_window()
-- GTK_WIDGET_MAPPED → gtk_widget_get_mapped()
-- GTK_WIDGET_VISIBLE → gtk_widget_get_visible()
-- gdk_drawable_get_size → gtk_widget_get_allocated_width/height
+- **Drawing**: `gdk_pixbuf_render_to_drawable` → Cairo
+- **Events**: `expose_event` → `draw` signal with `cairo_t*`
+- **Accessors**: `widget->window` → `gtk_widget_get_window()`
+- **Monitor**: `gdk_screen_*` → `GdkDisplay`/`GdkMonitor`
+- **Input**: `gdk_pointer_grab` → `gdk_device_grab`
 
-### Phase 4: Drawing System (Cairo) ✅
-- gdk_pixbuf_render_to_drawable → Cairo
-- gdk_window_clear → Cairo paint
-- GdkBitmap cursor → Cairo surface
-- HandleExpose updated for GTK3 draw signal
-- gtk_widget_modify_bg → CSS styling
+### Critical Bug Fix
 
-### Phase 5: Monitor API ✅
-- gdk_screen_width/height → gdk_monitor_get_geometry
-- gdk_screen_get_n_monitors → gdk_display_get_n_monitors
-- gdk_screen_get_monitor_geometry → gdk_monitor_get_geometry
-
-### Phase 6: Final Cleanup ✅
-- gdk_cairo_create → gdk_window_begin_draw_frame
-- gdk_pointer_grab → gdk_device_grab
-- gdk_display_pointer_ungrab → gdk_device_ungrab
-- gdk_display_warp_pointer → gdk_device_warp
-- Removed deprecated gtk_window_set_wmclass
-- Removed unused variables
-
-### Test Suite Update ✅
-- tests/Makefile updated for GTK3
-- All 50 tests passing
+**Segfault on image open**: Fixed by using cairo context from draw signal handler instead of creating nested `GdkDrawingContext`.
 
 ---
 
@@ -69,20 +49,12 @@
 ========================================
 Running Unit Tests
 ========================================
---- Running unit/test_pho ---
-5 Tests 0 Failures 0 Ignored OK
-
---- Running unit/test_phoimglist ---
 5 Tests 0 Failures 0 Ignored OK
 
 ========================================
 Running Regression Tests
 ========================================
---- Running regression/test_issue_1 ---
-1 Tests 0 Failures 0 Ignored OK
-...
---- Running regression/test_features_raw_and_slideshow ---
-14 Tests 0 Failures 0 Ignored OK
+45 Tests 0 Failures 0 Ignored OK
 
 ========================================
 All tests passed!
@@ -96,13 +68,15 @@ All tests passed!
 | File | Changes |
 |------|---------|
 | `Makefile` | GTK3 pkg-config |
-| `pho.h` | Header cleanup |
+| `pho.h` | Header cleanup, DrawImage signature |
 | `dialogs.h` | IsVisible macro |
 | `gmain.c` | Monitor API, key symbols |
-| `gwin.c` | Cairo drawing, widgets, monitor API |
+| `gwin.c` | Cairo drawing, widgets, monitor API, NULL checks |
 | `gdialogs.c` | Signals, containers, accessors |
 | `keydialog.c` | Signals, containers |
+| `pho.c` | NULL checks in ScaleAndRotate |
 | `tests/Makefile` | GTK3 pkg-config for tests |
+| `README.md` | Updated for GTK3 |
 
 ---
 
@@ -111,11 +85,17 @@ All tests passed!
 ```bash
 # Build
 $ make clean && make
+# 37 warnings (C prototype style, non-GTK)
+# 0 GTK deprecation warnings
 # Binary: pho created successfully
 
 # Tests
 $ make test
 # All 50 tests passed!
+
+# Runtime test
+$ ./pho test-img/*.jpg
+# Images display correctly
 
 # Check GTK3 linking
 $ otool -L pho | grep gtk
@@ -124,12 +104,30 @@ $ otool -L pho | grep gtk
 
 ---
 
-## Next Steps
+## Post-Migration Checklist
 
-1. **Functional GUI Testing**: Launch pho with actual images
-2. **Linux Testing**: Verify on Debian/Ubuntu
-3. **Merge to Main**: Create PR for gtk3-migration-phase1 branch
+- [x] All compilation errors fixed
+- [x] All GTK deprecation warnings resolved
+- [x] All tests passing
+- [x] Runtime tested with actual images
+- [x] Documentation updated (README.md, plan.md, todo.md)
+- [ ] Linux platform verification
+- [ ] Merge to main branch
+- [ ] Create release tag
 
 ---
 
-*GTK2→GTK3 Migration COMPLETE with full test coverage.*
+## Next Phase: Enhanced Features
+
+With GTK3 migration complete, the project is ready for new features:
+
+1. **Enhanced Image Formats**: WebP, HEIF/HEIC, SVG support
+2. **Performance Improvements**: Thumbnail caching, async loading
+3. **UI/UX Enhancements**: Dark mode, configurable shortcuts
+4. **Export Features**: Batch resize, contact sheets
+
+See `docs/plan.md` for detailed feature roadmap.
+
+---
+
+*GTK2→GTK3 Migration COMPLETE and VERIFIED.*
