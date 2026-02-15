@@ -74,6 +74,45 @@ int ShowImage()
     return 0;
 }
 
+/* Check if filename has a RAW camera format extension
+ * Returns: 1 if RAW format, 0 otherwise
+ */
+static int IsRawFormat(const char* filename)
+{
+    const char* ext = strrchr(filename, '.');
+    if (!ext) return 0;
+    
+    /* Common RAW format extensions */
+    static const char* raw_extensions[] = {
+        ".cr2",   /* Canon */
+        ".cr3",   /* Canon */
+        ".nef",   /* Nikon */
+        ".nrw",   /* Nikon */
+        ".arw",   /* Sony */
+        ".sr2",   /* Sony */
+        ".srf",   /* Sony */
+        ".dng",   /* Adobe Digital Negative */
+        ".orf",   /* Olympus */
+        ".raf",   /* Fujifilm */
+        ".pef",   /* Pentax */
+        ".x3f",   /* Sigma */
+        ".rw2",   /* Panasonic */
+        ".rwl",   /* Leica */
+        ".iiq",   /* Phase One */
+        ".3fr",   /* Hasselblad */
+        ".mos",   /* Leaf */
+        ".raw",   /* Generic */
+        NULL
+    };
+    
+    /* Case-insensitive comparison */
+    for (int i = 0; raw_extensions[i] != NULL; i++) {
+        if (strcasecmp(ext, raw_extensions[i]) == 0)
+            return 1;
+    }
+    return 0;
+}
+
 static int LoadImageFromFile(PhoImage* img)
 {
     GError* err = NULL;
@@ -84,6 +123,15 @@ static int LoadImageFromFile(PhoImage* img)
 
     if (gDebug)
         printf("LoadImageFromFile(%s)\n", img->filename);
+
+    /* Check for RAW format before attempting to load */
+    if (IsRawFormat(img->filename)) {
+        const char* ext = strrchr(img->filename, '.');
+        fprintf(stderr, "RAW format (%s) detected: %s\n", ext, img->filename);
+        fprintf(stderr, "Pho displays processed images (JPEG/PNG).\n");
+        fprintf(stderr, "Use dcraw or your camera's software to convert first.\n");
+        return -1;
+    }
 
     /* Free the current image */
     if (gImage) {
@@ -822,6 +870,7 @@ void Usage()
     printf("\t-R:  Randomize order in which images will be shown\n");
     printf("\t-mN: Use monitor number N.\n");
     printf("\t-n:  Replace each image window with a new window (helpful for some window managers)\n");
+    printf("\t-s:  Slideshow mode with default %d second delay\n", DEFAULT_SLIDESHOW_DELAY / 1000);
     printf("\t-sN: Slideshow mode, where N is the timeout in seconds\n");
     printf("\t-r:  Repeat: loop back to the first image after showing the last\n");
     printf("\t-cpattern: Caption/Comment file pattern, format string for reworking filename\n");
