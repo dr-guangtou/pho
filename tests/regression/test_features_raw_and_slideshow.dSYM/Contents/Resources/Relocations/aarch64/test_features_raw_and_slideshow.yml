@@ -1,0 +1,5 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     'regression/test_features_raw_and_slideshow'
+relocations:     []
+...

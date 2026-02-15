@@ -3,9 +3,9 @@
 
 CC = cc
 CFLAGS = -g -Wall -DVERSION='"test"' -I.. -I../exif -Iunity \
-         $(shell pkg-config --cflags gtk+-2.0 gdk-2.0 2>/dev/null)
+         $(shell pkg-config --cflags gtk+-3.0 2>/dev/null)
 
-LDFLAGS = $(shell pkg-config --libs gtk+-2.0 gdk-2.0 2>/dev/null) -lm
+LDFLAGS = $(shell pkg-config --libs gtk+-3.0 2>/dev/null) -lm
 
 # Unity framework
 UNITY_SRC = unity/unity.c
