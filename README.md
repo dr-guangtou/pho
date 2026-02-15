@@ -34,6 +34,18 @@ export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:$PKG_CONFIG_PATH"
 make
 ```
 
+### Testing
+
+Pho includes a test suite using the Unity testing framework:
+
+```bash
+make test        # Run all tests
+make test-unit   # Run unit tests only
+make test-regression  # Run regression tests only
+```
+
+Tests are located in the `tests/` directory.
+
 ### Installation
 
 To install system-wide (requires root):
@@ -52,6 +64,12 @@ ln -s "$(pwd)/pho" ~/.local/bin/pho
 Then you can run `pho` from anywhere.
 
 ---
+
+## Recent Changes
+
+- Fixed several security issues (buffer overflows, uninitialized variables)
+- Added automated test suite
+- Improved memory safety
 
 ## Warning
 

@@ -19,6 +19,7 @@ void setUp(void) {
     gFirstImage = NULL; gCurImage = NULL;
     gDelayMillis = 1000; gPendingTimeout = 0;
 }
+void tearDown(void) {}
 
 void test_slideshow_not_added_at_end(void) {
     PhoImage img;
