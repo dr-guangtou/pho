@@ -182,15 +182,15 @@ void UpdateInfoDialog()
 
 static gint InfoDialogExpose(GtkWidget* widget, GdkEventKey* event)
 {
-    gtk_signal_handler_block_by_func(GTK_OBJECT(InfoDialog),
-                                     (GtkSignalFunc)InfoDialogExpose, 0);
+    g_signal_handler_block(G_OBJECT(InfoDialog),
+                                     (GCallback)InfoDialogExpose, 0);
     gtk_widget_grab_focus(InfoDEntry);
     if (gDebug)
         printf("InfoDialogExpose\n");
     UpdateInfoDialog(gCurImage);
     /*
-    gtk_signal_handler_unblock_by_func(GTK_OBJECT(InfoDialog),
-                                       (GtkSignalFunc)InfoDialogExpose, 0);
+    g_signal_handler_unblock(G_OBJECT(InfoDialog),
+                                       (GCallback)InfoDialogExpose, 0);
      */
     /* Return FALSE so that the regular dialog expose handler will
      * draw the dialog properly the first time.
@@ -202,9 +202,9 @@ static gint HandleInfoKeyPress(GtkWidget* widget, GdkEventKey* event)
 {
     switch (event->keyval)
     {
-      case GDK_Escape:
-      case GDK_Return:
-      case GDK_KP_Enter:
+      case GDK_KEY_Escape:
+      case GDK_KEY_Return:
+      case GDK_KEY_KP_Enter:
           PopdownInfoDialog();
           return TRUE;
     }
@@ -243,8 +243,8 @@ void ToggleInfo()
     /* Else it's the first time, and we need to create the dialog */
 
     InfoDialog = gtk_dialog_new();
-    gtk_signal_connect(GTK_OBJECT(InfoDialog), "key_press_event",
-                       (GtkSignalFunc)HandleInfoKeyPress, 0);
+    g_signal_connect(G_OBJECT(InfoDialog), "key-press-event",
+                       G_CALLBACK(HandleInfoKeyPress), 0);
 
 #ifdef SCROLLER
     /* With the scroller, the dialog comes up tiny.
@@ -271,8 +271,8 @@ void ToggleInfo()
     ok = gtk_button_new_with_label("Ok");
     gtk_box_pack_start(GTK_BOX(GTK_DIALOG(InfoDialog)->action_area),
                        ok, TRUE, TRUE, 0);
-    gtk_signal_connect(GTK_OBJECT(ok), "clicked",
-                       (GtkSignalFunc)PopdownInfoDialog, 0);
+    g_signal_connect(G_OBJECT(ok), "clicked",
+                       G_CALLBACK(PopdownInfoDialog), 0);
     gtk_widget_show(ok);
 
     /* Add the info items */
@@ -367,8 +367,8 @@ void ToggleInfo()
     }
     gtk_widget_show(InfoExifContainer);
 
-    gtk_signal_connect(GTK_OBJECT(InfoDialog), "expose_event",
-                       (GtkSignalFunc)InfoDialogExpose, 0);
+    g_signal_connect(G_OBJECT(InfoDialog), "draw",
+                       G_CALLBACK(InfoDialogExpose), 0);
 
     gtk_widget_show(InfoDialog);
     /* Don't call UpdateInfoDialog: it won't actually update
@@ -465,8 +465,8 @@ int Prompt(char* msg, char* yesStr, char* noStr, char* yesChars, char* noChars)
                                         GTK_RESPONSE_OK);
          */
 
-        gtk_signal_connect(GTK_OBJECT(promptDialog), "key_press_event",
-                           (GtkSignalFunc)HandlePromptKeyPress, 0);
+        g_signal_connect(G_OBJECT(promptDialog), "key-press-event",
+                           G_CALLBACK(HandlePromptKeyPress), 0);
 
         /* Make the label: */
         question = gtk_label_new(msg);

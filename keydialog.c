@@ -129,7 +129,7 @@ static gint handleKeywordsKeyPress(GtkWidget* widget, GdkEventKey* event)
     /* We only handle a few key events that aren't shifted: */
     switch (event->keyval)
     {
-      case GDK_Escape:
+      case GDK_KEY_Escape:
           LeaveKeywordsMode();
           return TRUE;
     }
@@ -149,13 +149,13 @@ static gint handleKeywordsKeyPress(GtkWidget* widget, GdkEventKey* event)
     if (event->state & GDK_CONTROL_MASK) {
         switch (event->keyval)
         {
-        case GDK_a:
-        case GDK_e:
-        case GDK_u:
-        case GDK_h:
-        case GDK_w:
-        case GDK_k:
-        case GDK_d:
+        case GDK_KEY_a:
+        case GDK_KEY_e:
+        case GDK_KEY_u:
+        case GDK_KEY_h:
+        case GDK_KEY_w:
+        case GDK_KEY_k:
+        case GDK_KEY_d:
             return FALSE;
         }
     }
@@ -175,7 +175,7 @@ static void AddNewKeywordField()
     {
         if (KeywordsDEntry[i] == 0)
         {
-            GtkWidget* hbox = gtk_hbox_new(FALSE, 3);
+            GtkWidget* hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
             gtk_box_pack_start(GTK_BOX(KeywordsContainer), hbox,
                                TRUE, TRUE, 4);
 
@@ -190,8 +190,8 @@ static void AddNewKeywordField()
             KeywordsDEntry[i] = gtk_entry_new();
             gtk_box_pack_start(GTK_BOX(hbox), KeywordsDEntry[i],
                                TRUE, TRUE, 4);
-            gtk_signal_connect(GTK_OBJECT(KeywordsDEntry[i]), "activate",
-                               (GtkSignalFunc)activate, (gpointer)i);
+            g_signal_connect(G_OBJECT(KeywordsDEntry[i]), "activate",
+                               G_CALLBACK(activate), (gpointer)i);
             gtk_widget_show(KeywordsDEntry[i]);
             gtk_widget_show(hbox);
 
@@ -226,8 +226,8 @@ static void MakeNewKeywordsDialog()
     gtk_container_add(GTK_CONTAINER(KeywordsDialog), dlg_vbox);
     gtk_widget_show(dlg_vbox);
 
-    gtk_signal_connect(GTK_OBJECT(KeywordsDialog), "key_press_event",
-                       (GtkSignalFunc)handleKeywordsKeyPress, 0);
+    g_signal_connect(G_OBJECT(KeywordsDialog), "key-press-event",
+                       G_CALLBACK(handleKeywordsKeyPress), 0);
 
     KeywordsContainer = gtk_vbox_new(FALSE, 3);
     gtk_container_add(GTK_CONTAINER(dlg_vbox), KeywordsContainer);
@@ -246,8 +246,8 @@ static void MakeNewKeywordsDialog()
     ok = gtk_button_new_with_label("Leave Keywords Mode");
     gtk_box_pack_start(GTK_BOX(btn_box), ok, TRUE, TRUE, 0);
 
-    gtk_signal_connect(GTK_OBJECT(ok), "clicked",
-                       (GtkSignalFunc)LeaveKeywordsMode, 0);
+    g_signal_connect(G_OBJECT(ok), "clicked",
+                       G_CALLBACK(LeaveKeywordsMode), 0);
     gtk_widget_show(ok);
 
     KeywordsDImgName = gtk_label_new("imgName");

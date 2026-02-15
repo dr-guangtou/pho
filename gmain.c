@@ -146,34 +146,34 @@ gint HandleGlobalKeys(GtkWidget* widget, GdkEventKey* event)
         (event->state & (GDK_CONTROL_MASK | GDK_MOD1_MASK))) {
         switch (event->keyval)
         {
-            case GDK_f:
+            case GDK_KEY_f:
                 /* Don't respond to ctrl-F -- that might be an attempt
                  * to edit in a text field in the keywords dialog.
                  * But we don't do anything on f with any modifier key either.
                  */
                 return FALSE;
-            case GDK_0:
-            case GDK_1:
-            case GDK_2:
-            case GDK_3:
-            case GDK_4:
-            case GDK_5:
-            case GDK_6:
-            case GDK_7:
-            case GDK_8:
-            case GDK_9:
+            case GDK_KEY_0:
+            case GDK_KEY_1:
+            case GDK_KEY_2:
+            case GDK_KEY_3:
+            case GDK_KEY_4:
+            case GDK_KEY_5:
+            case GDK_KEY_6:
+            case GDK_KEY_7:
+            case GDK_KEY_8:
+            case GDK_KEY_9:
                 if (event->state & GDK_MOD1_MASK) { /* alt-num: add 10 to num */
-                    ToggleNoteFlag(gCurImage, event->keyval - GDK_0 + 10);
+                    ToggleNoteFlag(gCurImage, event->keyval - GDK_KEY_0 + 10);
                     return TRUE;
                 }
                 return FALSE;
-            case GDK_equal:
+            case GDK_KEY_equal:
                 if (event->state & GDK_CONTROL_MASK) {
                     TryScale(1.25);
                     return TRUE;
                 }
                 return FALSE;
-            case GDK_KP_Subtract:
+            case GDK_KEY_KP_Subtract:
                 if (event->state & GDK_CONTROL_MASK) {
                     TryScale(.8);
                     return TRUE;
@@ -187,13 +187,13 @@ gint HandleGlobalKeys(GtkWidget* widget, GdkEventKey* event)
     /* Now we know no modifier keys were down. */
     switch (event->keyval)
     {
-      case GDK_d:
+      case GDK_KEY_d:
           if (gCurImage)
               DeleteImage(gCurImage);
           break;
-      case GDK_space:
-      case GDK_Page_Down:
-      case GDK_KP_Page_Down:
+      case GDK_KEY_space:
+      case GDK_KEY_Page_Down:
+      case GDK_KEY_KP_Page_Down:
           /* If we're in slideshow mode, cancel the slideshow */
           if (gDelayMillis > 0) {
               gDelayMillis = 0;
@@ -203,95 +203,95 @@ gint HandleGlobalKeys(GtkWidget* widget, GdkEventKey* event)
                   EndSession();
           }
           return TRUE;
-      case GDK_BackSpace:
-      case GDK_Page_Up:
-      case GDK_KP_Page_Up:
+      case GDK_KEY_BackSpace:
+      case GDK_KEY_Page_Up:
+      case GDK_KEY_KP_Page_Up:
           PrevImage();
           return TRUE;
-      case GDK_Home:
+      case GDK_KEY_Home:
           gCurImage = 0;
           NextImage();
           return TRUE;
-      case GDK_End:
+      case GDK_KEY_End:
           gCurImage = gFirstImage->prev;
           ThisImage();
           return TRUE;
-      case GDK_n:   /* Get out of any weird display modes */
+      case GDK_KEY_n:   /* Get out of any weird display modes */
           SetViewModes(PHO_DISPLAY_NORMAL, PHO_SCALE_NORMAL, 1.);
           ShowImage();
           return TRUE;
-      case GDK_f:   /* Full size mode: show image bit-for-bit */
+      case GDK_KEY_f:   /* Full size mode: show image bit-for-bit */
           SetViewModes(gDisplayMode,
                        ToggleBetween(gScaleMode,
                                      PHO_SCALE_FULLSIZE, PHO_SCALE_NORMAL),
                        1.);
           return TRUE;
-      case GDK_F:   /* Full screen mode: as big as possible on screen */
+      case GDK_KEY_F:   /* Full screen mode: as big as possible on screen */
           SetViewModes(gDisplayMode,
                        ToggleBetween(gScaleMode,
                                      PHO_SCALE_FULLSCREEN, PHO_SCALE_NORMAL),
                        1.);
           return TRUE;
-      case GDK_p:
+      case GDK_KEY_p:
           SetViewModes((gDisplayMode == PHO_DISPLAY_PRESENTATION)
                        ? PHO_DISPLAY_NORMAL
                        : PHO_DISPLAY_PRESENTATION,
                        gScaleMode, gScaleRatio);
           return TRUE;
-      case GDK_0:
-      case GDK_1:
-      case GDK_2:
-      case GDK_3:
-      case GDK_4:
-      case GDK_5:
-      case GDK_6:
-      case GDK_7:
-      case GDK_8:
-      case GDK_9:
-          ToggleNoteFlag(gCurImage, event->keyval - GDK_0);
+      case GDK_KEY_0:
+      case GDK_KEY_1:
+      case GDK_KEY_2:
+      case GDK_KEY_3:
+      case GDK_KEY_4:
+      case GDK_KEY_5:
+      case GDK_KEY_6:
+      case GDK_KEY_7:
+      case GDK_KEY_8:
+      case GDK_KEY_9:
+          ToggleNoteFlag(gCurImage, event->keyval - GDK_KEY_0);
           return TRUE;
-      case GDK_t:   /* make life easier for xv switchers */
-      case GDK_r:
-      case GDK_Right:
-      case GDK_KP_Right:
+      case GDK_KEY_t:   /* make life easier for xv switchers */
+      case GDK_KEY_r:
+      case GDK_KEY_Right:
+      case GDK_KEY_KP_Right:
           ScaleAndRotate(gCurImage, 90);
           return TRUE;
-      case GDK_T:   /* make life easier for xv users */
-      case GDK_R:
-      case GDK_l:
-      case GDK_L:
-      case GDK_Left:
-      case GDK_KP_Left:
+      case GDK_KEY_T:   /* make life easier for xv users */
+      case GDK_KEY_R:
+      case GDK_KEY_l:
+      case GDK_KEY_L:
+      case GDK_KEY_Left:
+      case GDK_KEY_KP_Left:
           ScaleAndRotate(gCurImage, 270);
           return TRUE;
-      case GDK_Up:
-      case GDK_Down:
+      case GDK_KEY_Up:
+      case GDK_KEY_Down:
           ScaleAndRotate(gCurImage, 180);
           return TRUE;
-      case GDK_plus:
-      case GDK_KP_Add:
-      case GDK_equal:
+      case GDK_KEY_plus:
+      case GDK_KEY_KP_Add:
+      case GDK_KEY_equal:
           TryScale(2.);
           return TRUE;
-      case GDK_minus:
-      case GDK_slash:
-      case GDK_KP_Subtract:
+      case GDK_KEY_minus:
+      case GDK_KEY_slash:
+      case GDK_KEY_KP_Subtract:
           TryScale(.5);
           return TRUE;
-      case GDK_g:  /* start gimp, or some other app */
+      case GDK_KEY_g:  /* start gimp, or some other app */
           RunPhoCommand();
           return TRUE;
-      case GDK_i:
+      case GDK_KEY_i:
           ToggleInfo();
           return TRUE;
-      case GDK_k:
+      case GDK_KEY_k:
           ToggleKeywordsMode();
           return TRUE;
-      case GDK_o:
+      case GDK_KEY_o:
           ChangeWorkingFileSet();
           return TRUE;
-      case GDK_Escape:
-      case GDK_q:
+      case GDK_KEY_Escape:
+      case GDK_KEY_q:
           EndSession();
           return TRUE;
       default:
@@ -468,12 +468,7 @@ int main(int argc, char** argv)
     /* See http://www.gtk.org/tutorial */
     gtk_init(&argc, &argv);
 
-    /* Must init rgb system explicitly, else we'll crash
-     * in the first gdk_pixbuf_render_to_drawable(),
-     * calling gdk_draw_rgb_image_dithalign():
-     * (Is this still true in gtk2?)
-     */
-    gdk_rgb_init();
+    /* gdk_rgb_init() removed in GTK3 - RGB handling is automatic now */
 
     gPhysMonitorWidth = gMonitorWidth = gdk_screen_width();
     gPhysMonitorHeight = gMonitorHeight = gdk_screen_height();
