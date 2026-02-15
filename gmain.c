@@ -405,8 +405,11 @@ static void CheckArg(char* arg)
             gScaleRatio = 0.0;
         } else if (*arg == 's') {
             /* find the slideshow delay time, from e.g. pho -s2 */
+            /* If no number given, use default delay */
             if (isdigit(arg[1]) || arg[1] == '.')
                 gDelayMillis = (int)(atof(arg+1) * 1000.);
+            else if (arg[1] == '\0')
+                gDelayMillis = DEFAULT_SLIDESHOW_DELAY;
             else Usage();
             if (gDebug)
                 printf("Slideshow delay %d milliseconds\n", gDelayMillis);

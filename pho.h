@@ -100,6 +100,9 @@ extern int gDebug;    /* debugging messages */
 #define PHO_ROTATE_180  180
 #define PHO_ROTATE_270  270
 
+/* Default slideshow delay in milliseconds (3 seconds) */
+#define DEFAULT_SLIDESHOW_DELAY 3000
+
 extern int gScaleMode;
 
 /* Scale Ratio is used in two ways: for PHO_SCALE_*_RATIO, it's a
