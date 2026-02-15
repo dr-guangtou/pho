@@ -88,50 +88,50 @@ See `docs/test-review.md` for detailed analysis.
 - **File**: `gmain.c:79,98-99`
 - **Type**: Crash
 - **Issue**: `gCurImage->filename` accessed without null check
-- **Fix**: Add `if (!gCurImage) return;` at function start
-- **Status**: ⬜ Open
+- **Fix**: Added `if (!gCurImage) return;` at function start
+- **Status**: ✅ **FIXED** - Verified by regression/test_issues_7_12
 
 ### 8. NULL Pointer Dereference in HandleGlobalKeys()
 - **File**: `gmain.c:182`
 - **Type**: Crash
 - **Issue**: `DeleteImage(gCurImage)` called without null check
-- **Fix**: Check `gCurImage` before calling
-- **Status**: ⬜ Open
+- **Fix**: Added `if (gCurImage)` check before calling DeleteImage
+- **Status**: ✅ **FIXED** - Verified by regression/test_issues_7_12
 
 ### 9. Memory Leak in LoadImageFromFile()
 - **File**: `pho.c:77-127`
 - **Type**: Memory leak
 - **Issue**: `GError *err` not freed on error path
-- **Fix**: Add `g_error_free(err);` before return
-- **Status**: ⬜ Open
+- **Fix**: Added `g_error_free(err);` before return on error path
+- **Status**: ✅ **FIXED** - Verified by regression/test_issues_7_12
 
 ### 10. Memory Leak in AddImgToList()
 - **File**: `imagenote.c:72-94`
 - **Type**: Memory leak / Double-free
-- **Issue**: Complex allocation logic with potential leak paths
-- **Fix**: Simplify logic, ensure all paths free properly
-- **Status**: ⬜ Open
+- **Issue**: strdup() failure path didn't free temporary string
+- **Fix**: Added NULL check and free for strdup() failure path
+- **Status**: ✅ **FIXED** - Verified by regression/test_issues_7_12
 
 ### 11. Resource Leak in ReadCaption()
 - **File**: `imagenote.c:143-256`
 - **Type**: Resource leak
-- **Issue**: `capfile` may not be closed on early return
-- **Fix**: Use `close()` before all return paths or use `goto cleanup`
-- **Status**: ⬜ Open
+- **Issue**: `capfile` not closed if `calloc()` for caption fails
+- **Fix**: Added `close(capfile)` before return on allocation failure
+- **Status**: ✅ **FIXED** - Verified by regression/test_issues_7_12
 
 ### 12. Use-After-Free Risk in Keywords Dialog
 - **File**: `keydialog.c:61-62`
 - **Type**: Crash (undefined behavior)
 - **Issue**: `strdup(NULL)` if `gtk_entry_get_text()` returns NULL
-- **Fix**: Check return value before strdup
-- **Status**: ⬜ Open
+- **Fix**: Added NULL check before strdup, set caption to NULL if text is NULL
+- **Status**: ✅ **FIXED** - Verified by regression/test_issues_7_12
 
 ### 13. File Descriptor Leak in jhead.c
 - **File**: `exif/jhead.c:163-213`
 - **Type**: Resource leak
 - **Issue**: Multiple return paths may not close file
-- **Fix**: Use `goto cleanup` pattern or wrap in function
-- **Status**: ⬜ Open
+- **Fix**: Code review shows file is properly closed - no actual leak found
+- **Status**: ✅ **CLOSED - No Issue Found** - ThumbnailFile properly closed at line 170
 
 ---
 
@@ -198,6 +198,17 @@ See `docs/test-review.md` for detailed analysis.
 
 ## ✅ Recently Fixed
 
+### High Priority Issues #7-12 - NULL dereferences, Memory/Resource leaks
+- **Files**: `gmain.c`, `pho.c`, `imagenote.c`, `keydialog.c`
+- **Fixed**: 2026-02-15
+- **Changes**:
+  - #7: NULL check for gCurImage in RunPhoCommand()
+  - #8: NULL check before DeleteImage() in HandleGlobalKeys()
+  - #9: g_error_free() on error path in LoadImageFromFile()
+  - #10: free() on strdup() failure in AddImgToList()
+  - #11: close() on calloc() failure in ReadCaption()
+  - #12: NULL check before strdup() in Keywords Dialog
+
 ### Buffer Overflow in CapFileName() - Issue #2
 - **File**: `imagenote.c`
 - **Fixed**: 2026-02-15
@@ -260,6 +271,8 @@ See `docs/test-review.md` for detailed analysis.
 | 2026-02-15 | **FIXED Issue #1** | Title buffer overflow - replaced strcat with strncat |
 | 2026-02-15 | **FIXED Issue #2** | CapFileName buffer overflow - added truncation checks |
 | 2026-02-15 | **FIXED Issue #4** | process_COM buffer overflow - replaced strcpy with strncpy |
+| 2026-02-15 | **FIXED Issues #7-12** | High priority fixes: NULL dereferences, memory/resource leaks |
+| 2026-02-15 | **CLOSED Issue #13** | No actual file descriptor leak found in jhead.c |
 
 ---
 

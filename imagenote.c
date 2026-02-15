@@ -86,8 +86,13 @@ void AddImgToList(char** strp, char* str)
         free(*strp);
         *strp = newstr;
     }
-    else
+    else {
         *strp = strdup(str);
+        if (!*strp) {
+            free(str);
+            return;
+        }
+    }
 
     /* QuoteString allocated a copy, so free that now: */
     free(str);
@@ -256,6 +261,7 @@ void ReadCaption(PhoImage* img)
     img->caption = calloc(1, MAX_CAPTION);
     if (!(img->caption)) {
         perror("Couldn't allocate memory for caption");
+        close(capfile);
         return;
     } 
     read(capfile, img->caption, MAX_CAPTION-1);

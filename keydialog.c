@@ -58,8 +58,8 @@ void RememberKeywords()
     /* and save a caption, if any */
     if (sLastImage->caption)
         free(sLastImage->caption);
-    sLastImage->caption = strdup((char*)gtk_entry_get_text(
-                                     (GtkEntry*)KeywordsCaption));
+    const gchar* caption_text = gtk_entry_get_text((GtkEntry*)KeywordsCaption);
+    sLastImage->caption = caption_text ? strdup((char*)caption_text) : NULL;
 }
 
 /* When deleting an image, we need to clear any notion of sLastImage

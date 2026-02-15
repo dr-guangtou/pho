@@ -52,7 +52,15 @@ static int ModeForScaling(int oldmode)
 static void RunPhoCommand()
 {
     int i;
-    char* cmd = getenv("PHO_CMD");
+    char* cmd;
+    
+    /* Check for NULL current image to prevent crash */
+    if (!gCurImage) {
+        fprintf(stderr, "No current image selected\n");
+        return;
+    }
+    
+    cmd = getenv("PHO_CMD");
     if (cmd == 0) cmd = "gimp";
     else if (! *cmd) {
         if (gDebug)
@@ -180,7 +188,8 @@ gint HandleGlobalKeys(GtkWidget* widget, GdkEventKey* event)
     switch (event->keyval)
     {
       case GDK_d:
-          DeleteImage(gCurImage);
+          if (gCurImage)
+              DeleteImage(gCurImage);
           break;
       case GDK_space:
       case GDK_Page_Down:

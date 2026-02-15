@@ -96,6 +96,7 @@ static int LoadImageFromFile(PhoImage* img)
     {
         gImage = 0;
         fprintf(stderr, "Can't open %s: %s\n", img->filename, err->message);
+        g_error_free(err);
         return -1;
     }
     ReadCaption(img);
