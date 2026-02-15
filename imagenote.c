@@ -175,6 +175,11 @@ void ReadCaption(PhoImage* img)
             /* Now we can allocate space for the lists of files/captions */
             sCaptionFileList = malloc(numlines * (sizeof (char*)));
             sCaptionList = malloc(numlines * (sizeof (char*)));
+            if (!sCaptionFileList || !sCaptionList) {
+                perror("Out of memory reading captions");
+                fclose(capfile);
+                return;
+            }
 
             /* and loop through again to actually read the captions */
             rewind(capfile);

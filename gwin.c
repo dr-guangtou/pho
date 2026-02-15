@@ -373,38 +373,43 @@ void DrawImage()
     }
     else {
         /* Update the titlebar */
-        sprintf(title, "pho: %s (%d x %d)", gCurImage->filename,
+        snprintf(title, sizeof(title), "pho: %s (%d x %d)", gCurImage->filename,
                 gCurImage->trueWidth, gCurImage->trueHeight);
         if (HasExif())
         {
             const char* date = ExifGetString(ExifDate);
             if (date && date[0]) {
-                /* Make sure there's room */
-                if (strlen(title) + strlen(date) + 3 < TITLELEN)
-                    strcat(title, " (");
-                strcat(title, date);
-                strcat(title, ")");
+                /* Safely append date if there's room */
+                size_t current_len = strlen(title);
+                size_t remaining = sizeof(title) - current_len - 1;
+                if (remaining >= strlen(date) + 3) {
+                    strncat(title, " (", remaining);
+                    strncat(title, date, remaining - 2);
+                    strncat(title, ")", remaining - 2 - strlen(date));
+                }
             }
         }
-        /* XXX replace these strcats with safer strncat */
+        /* Safely append scale mode info */
+        size_t title_remaining = sizeof(title) - strlen(title) - 1;
         if (gScaleMode == PHO_SCALE_FULLSIZE)
-            strcat(title, " (fullsize)");
+            strncat(title, " (fullsize)", title_remaining);
         else if (gScaleMode == PHO_SCALE_FULLSCREEN)
-            strcat(title, " (fullscreen)");
+            strncat(title, " (fullscreen)", title_remaining);
         else if (gScaleMode == PHO_SCALE_IMG_RATIO ||
                  gScaleMode == PHO_SCALE_SCREEN_RATIO) {
             char* titleEnd = title + strlen(title);
+            size_t remaining = sizeof(title) - (titleEnd - title) - 1;
             if (gScaleRatio < 1)
-                sprintf(titleEnd, " [%s/ %d]",
+                snprintf(titleEnd, remaining + 1, " [%s/ %d]",
                         (gScaleMode == PHO_SCALE_IMG_RATIO ? "fullsize " : ""),
                         (int)(1. / gScaleRatio));
             else
-                sprintf(titleEnd, " [%s* %d]",
+                snprintf(titleEnd, remaining + 1, " [%s* %d]",
                         (gScaleMode == PHO_SCALE_IMG_RATIO ? "fullsize " : ""),
                         (int)gScaleRatio);
         }
         else if (gScaleMode == PHO_SCALE_FIXED)
-            strcat(title, " (fixed)");
+            strncat(title, " (fixed)", title_remaining);
         gtk_window_set_title(GTK_WINDOW(gWin), title);
 
         if (gDisplayMode == PHO_DISPLAY_KEYWORDS) {

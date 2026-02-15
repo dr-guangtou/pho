@@ -125,6 +125,13 @@ extern void AppendItem(PhoImage* item);
 extern void ClearImageList();
 extern void ShuffleImages();
 
+/* ************** Scaling Functions ************** */
+extern void ScaleToFit(int *width, int *height,
+                       int max_width, int max_height,
+                       int scaleMode, double scaleRatio);
+extern void ShuffleArray(PhoImage** arr, int len);
+extern int CountImages(void);
+
 /* ************** Misc. functions ************** */
 /* Some window managers don't deal well with windows that resize,
  * or don't retain focus if a resized window no longer contains

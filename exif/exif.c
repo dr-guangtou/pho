@@ -427,14 +427,17 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 
             case TAG_MAKE:
                 strncpy(ImageInfo.CameraMake, (char*)ValuePtr, 31);
+                ImageInfo.CameraMake[31] = '\0';
                 break;
 
             case TAG_MODEL:
                 strncpy(ImageInfo.CameraModel, (char*)ValuePtr, 39);
+                ImageInfo.CameraModel[39] = '\0';
                 break;
 
             case TAG_DATETIME_ORIGINAL:
                 strncpy(ImageInfo.DateTime, (char*)ValuePtr, 19);
+                ImageInfo.DateTime[19] = '\0';
                 ImageInfo.DatePointer = (char*)ValuePtr;
                 break;
 
@@ -457,12 +460,14 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
                         c = (ValuePtr)[a];
                         if (c != '\0' && c != ' '){
                             strncpy(ImageInfo.Comments, a+(char*)ValuePtr, 199);
+                            ImageInfo.Comments[199] = '\0';
                             break;
                         }
                     }
                     
                 }else{
                     strncpy(ImageInfo.Comments, (char*)ValuePtr, 199);
+                    ImageInfo.Comments[199] = '\0';
                 }
                 break;
 

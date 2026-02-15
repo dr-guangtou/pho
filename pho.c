@@ -66,7 +66,7 @@ int ShowImage()
     /* Keywords dialog will be updated if necessary from DrawImage */
 
     if (gDelayMillis > 0 && gPendingTimeout == 0
-        && (gCurImage->next != 0 || gCurImage->next != gFirstImage)) {
+        && (gCurImage->next != 0 && gCurImage->next != gFirstImage)) {
         if (gDebug) printf("Adding timeout for %d msec\n", gDelayMillis);
         gPendingTimeout = g_timeout_add (gDelayMillis, DelayTimer, 0);
     }
@@ -244,12 +244,30 @@ int CountImages()
     return numImages;
 }
 
+/* Return a random integer in range [0, upper_bound) without modulo bias.
+ * Uses rejection sampling for uniform distribution.
+ */
+static int random_uniform(int upper_bound)
+{
+    int r;
+    int limit = RAND_MAX - (RAND_MAX % upper_bound);
+    
+    if (upper_bound <= 1)
+        return 0;
+    
+    do {
+        r = rand();
+    } while (r >= limit);
+    
+    return r % upper_bound;
+}
+
 void ShuffleArray(PhoImage** arr, int len)
 {
-    int i, j;
-    for (i = 0; i < len - 1; i++)
+    int i;
+    for (i = len - 1; i > 0; i--)
     {
-        j = i + rand() / (RAND_MAX / (len - i) + 1);
+        int j = random_uniform(i + 1);
         PhoImage* tmp = arr[j];
         arr[j] = arr[i];
         arr[i] = tmp;
@@ -297,7 +315,7 @@ void ShuffleImages()
  * max_width and max_height. This doesn't actually scale, just
  * calculates dimensions and returns them in *width and *height.
  */
-static void ScaleToFit(int *width, int *height,
+void ScaleToFit(int *width, int *height,
                        int max_width, int max_height,
                        int scaleMode, double scaleRatio)
 {
@@ -316,6 +334,10 @@ static void ScaleToFit(int *width, int *height,
                 new_w = *width / yratio;
                 new_h = *height / yratio;
             }
+        } else {
+            /* No scaling needed - preserve original dimensions */
+            new_w = *width;
+            new_h = *height;
         }
     }
     else {
@@ -667,7 +689,7 @@ void DeleteImage(PhoImage* delImg)
     char buf[512];
     if (delImg->filename == 0)
         return;
-    sprintf(buf, "Delete file %s?", delImg->filename);
+    snprintf(buf, sizeof(buf), "Delete file %s?", delImg->filename);
     if (Prompt(buf, "Delete", 0, "dD\n", "nN") > 0)
         ReallyDelete(delImg);
 }

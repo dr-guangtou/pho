@@ -126,16 +126,16 @@ void UpdateInfoDialog()
      */
     KeepOnTop(InfoDialog);
 
-    sprintf(buffer, "pho: %s info", gCurImage->filename);
+    snprintf(buffer, sizeof(buffer), "pho: %s info", gCurImage->filename);
     gtk_window_set_title(GTK_WINDOW(InfoDialog), buffer);
 
     s = gCurImage->comment;
     gtk_entry_set_text(GTK_ENTRY(InfoDEntry), s ? s : "");
 
     gtk_label_set_text(GTK_LABEL(InfoDImgName), gCurImage->filename);
-    sprintf(buffer, "%d x %d", gCurImage->trueWidth, gCurImage->trueHeight);
+    snprintf(buffer, sizeof(buffer), "%d x %d", gCurImage->trueWidth, gCurImage->trueHeight);
     gtk_label_set_text(GTK_LABEL(InfoDOrigSize), buffer);
-    sprintf(buffer, "%d x %d", gCurImage->curWidth, gCurImage->curHeight);
+    snprintf(buffer, sizeof(buffer), "%d x %d", gCurImage->curWidth, gCurImage->curHeight);
     gtk_label_set_text(GTK_LABEL(InfoDImgSize), buffer);
     switch (gCurImage->curRot)
     {

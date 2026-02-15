@@ -89,6 +89,10 @@ static void RunPhoCommand()
     if (! added_arg) {
         int new_argc = gargc + 2;
         gchar** new_argv = malloc(sizeof(gchar *) * new_argc);
+        if (!new_argv) {
+            fprintf(stderr, "Out of memory!\n");
+            return;
+        }
         for (i=0; i<gargc; ++i)
             new_argv[i] = gargv[i];
         new_argv[gargc] = gCurImage->filename;

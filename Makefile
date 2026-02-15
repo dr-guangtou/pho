@@ -60,9 +60,19 @@ install: pho
 	$(INSTALL) pho $(INSTALLPREFIX)/bin/pho
 	$(INSTALL) doc/pho.1 $(INSTALLPREFIX)/man/man1/pho.1
 
+test:
+	$(MAKE) -C tests test
+
+test-unit:
+	$(MAKE) -C tests test-unit
+
+test-regression:
+	$(MAKE) -C tests test-regression
+
 clean:
 	rm -f *.[oas] *.ld core* pho pho-*.tar.gz *.rpm *.tar.gz
 	rm -f build-stamp configure-stamp
 	rm -rf debian/pho
 	cd exif; make clean
+	$(MAKE) -C tests clean
 
