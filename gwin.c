@@ -738,7 +738,16 @@ static void NewWindow()
 
     gtk_widget_show(gWin);
 
-    /* Bring window to front and give it focus */
+    /* Bring window to front and give it focus
+     * On macOS with Quartz backend, we need to ensure the window is realized
+     * and use both present and raise to reliably bring it to front.
+     */
+    gtk_widget_realize(gWin);
+    GdkWindow *window = gtk_widget_get_window(gWin);
+    if (window) {
+        gdk_window_raise(window);
+        gdk_window_focus(window, GDK_CURRENT_TIME);
+    }
     gtk_window_present(GTK_WINDOW(gWin));
 
     /* Must come after show(), hide_cursor needs a window */
