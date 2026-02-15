@@ -738,6 +738,9 @@ static void NewWindow()
 
     gtk_widget_show(gWin);
 
+    /* Bring window to front and give it focus */
+    gtk_window_present(GTK_WINDOW(gWin));
+
     /* Must come after show(), hide_cursor needs a window */
     if (gDisplayMode == PHO_DISPLAY_PRESENTATION)
         hide_cursor(sDrawingArea);
