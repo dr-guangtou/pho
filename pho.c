@@ -79,7 +79,7 @@ static int LoadImageFromFile(PhoImage* img)
     GError* err = NULL;
     int rot;
 
-    if (img == 0)
+    if (!img)
         return -1;
 
     if (gDebug)
@@ -265,13 +265,14 @@ static int random_uniform(int upper_bound)
 
 void ShuffleArray(PhoImage** arr, int len)
 {
-    int i;
-    for (i = len - 1; i > 0; i--)
+    size_t i;
+    /* Use size_t for indices to prevent integer overflow with large arrays */
+    for (i = (size_t)len; i > 1; i--)
     {
-        int j = random_uniform(i + 1);
+        size_t j = random_uniform((int)i);
         PhoImage* tmp = arr[j];
-        arr[j] = arr[i];
-        arr[i] = tmp;
+        arr[j] = arr[i-1];
+        arr[i-1] = tmp;
     }
 }
 
@@ -659,7 +660,7 @@ int ScaleAndRotate(PhoImage* img, int degrees)
 PhoImage* NewPhoImage(char* fnam)
 {
     PhoImage* newimg = calloc(1, sizeof (PhoImage));
-    if (newimg == 0) return 0;
+    if (!newimg) return 0;
     newimg->filename = fnam;  /* no copy, we don't own the memory */
 
     return newimg;
@@ -725,7 +726,7 @@ static int RotateImage(PhoImage* img, int degrees)
     }
 
     /* Swap X and Y if appropriate */
-    if (degrees == 90 || degrees == 270)
+    if (degrees == PHO_ROTATE_90 || degrees == PHO_ROTATE_270)
     {
         newWidth = img->curHeight;
         newHeight = img->curWidth;
@@ -758,6 +759,14 @@ static int RotateImage(PhoImage* img, int degrees)
     if (!newImage) return 1;
     newpixels = gdk_pixbuf_get_pixels(newImage);
     newrowstride = gdk_pixbuf_get_rowstride(newImage);
+
+    /* Validate dimensions to prevent underflow in rotation calculations */
+    if (img->curWidth <= 0 || img->curHeight <= 0) {
+        fprintf(stderr, "Invalid image dimensions: %dx%d\n", 
+                img->curWidth, img->curHeight);
+        g_object_unref(newImage);
+        return 1;
+    }
 
     for (x = 0; x < img->curWidth; ++x)
     {

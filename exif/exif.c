@@ -377,7 +377,9 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 
         if (ShowTags){
             // Show tag name
-            for (a=0;;a++){
+            // Calculate TagTable size for bounds checking
+            static const int TagTableSize = sizeof(TagTable) / sizeof(TagTable[0]);
+            for (a=0; a < TagTableSize; a++){
                 if (TagTable[a].Tag == 0){
                     printf("  Unknown Tag %04x Value = ", Tag);
                     break;

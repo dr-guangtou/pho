@@ -596,8 +596,13 @@ void EndSession()
     UpdateInfoDialog();
     RememberKeywords();
     PrintNotes();
+    /* Ensure all pending GTK events are processed before quitting */
+    while (gtk_events_pending())
+        gtk_main_iteration();
     gtk_main_quit();
-    /* This doesn't always quit!  So make sure: */
+    /* Exit is a fallback in case gtk_main_quit() doesn't terminate
+     * (can happen with some window managers). Most cleanup is done above.
+     */
     exit(0);
 }
 

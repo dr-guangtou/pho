@@ -13,7 +13,7 @@ UNITY_OBJ = unity/unity.o
 
 # Test executables
 UNIT_TESTS = unit/test_pho unit/test_phoimglist
-REGRESSION_TESTS = regression/test_issue_1 regression/test_issue_2 regression/test_issue_3 regression/test_issue_4 regression/test_issue_5 regression/test_issue_6 regression/test_issues_7_12
+REGRESSION_TESTS = regression/test_issue_1 regression/test_issue_2 regression/test_issue_3 regression/test_issue_4 regression/test_issue_5 regression/test_issue_6 regression/test_issues_7_12 regression/test_issues_14_21
 ALL_TESTS = $(UNIT_TESTS) $(REGRESSION_TESTS)
 
 # Default target: build all tests
@@ -55,6 +55,9 @@ regression/test_issue_6: regression/test_issue_6.c $(UNITY_OBJ) $(PHO_SRCS) ../e
 
 regression/test_issues_7_12: regression/test_issues_7_12.c $(UNITY_OBJ) $(PHO_SRCS) ../exif/libphoexif.a
 	$(CC) $(CFLAGS) -o $@ regression/test_issues_7_12.c $(UNITY_OBJ) $(PHO_SRCS) ../exif/libphoexif.a $(LDFLAGS)
+
+regression/test_issues_14_21: regression/test_issues_14_21.c $(UNITY_OBJ) $(PHO_SRCS) ../exif/libphoexif.a
+	$(CC) $(CFLAGS) -o $@ regression/test_issues_14_21.c $(UNITY_OBJ) $(PHO_SRCS) ../exif/libphoexif.a $(LDFLAGS)
 
 # Run all tests
 test: all

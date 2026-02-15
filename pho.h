@@ -94,6 +94,12 @@ extern int gDebug;    /* debugging messages */
   */
 #define PHO_SCALE_FIXED 6
 
+/* ************** Rotation constants ************** */
+#define PHO_ROTATE_0    0
+#define PHO_ROTATE_90   90
+#define PHO_ROTATE_180  180
+#define PHO_ROTATE_270  270
+
 extern int gScaleMode;
 
 /* Scale Ratio is used in two ways: for PHO_SCALE_*_RATIO, it's a

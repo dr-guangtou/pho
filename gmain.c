@@ -61,7 +61,7 @@ static void RunPhoCommand()
     }
     
     cmd = getenv("PHO_CMD");
-    if (cmd == 0) cmd = "gimp";
+    if (!cmd) cmd = "gimp";
     else if (! *cmd) {
         if (gDebug)
             printf("PHO_CMD set to NULL, not running anything\n");
