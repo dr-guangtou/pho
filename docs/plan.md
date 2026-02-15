@@ -1,321 +1,223 @@
-# Pho Development Plan - Issues & Roadmap
+# Pho Development Plan & Roadmap
 
-**Document Version**: 1.0  
+**Document Version**: 2.0  
 **Last Updated**: 2026-02-15  
-**Maintainer**: Update this file after every bug fix or discovery
+**Status**: All security issues resolved - Ready for new features
 
 ---
 
-## ⚫ Infrastructure Priority (Setup Before Bug Fixes)
+## 📊 Current Status
 
-### 0. Testing Infrastructure
-- **File**: New `tests/` directory
-- **Type**: Infrastructure - Missing completely
-- **Issue**: Zero automated tests; all testing is manual
-- **Impact**: Cannot verify bug fixes, high risk of regression
-- **Recommendation**: 
-  - Add Unity test framework (single header)
-  - Create `tests/unit/` for function tests
-  - Create `tests/regression/` for bug fix tests
-  - Add `make test` target
-- **Status**: ⬜ Open - **BLOCKS bug fix verification**
+### Security & Stability: ✅ COMPLETE
 
-See `docs/test-review.md` for detailed analysis.
+All 21 security issues and code quality improvements have been resolved:
 
----
+| Category | Count | Status |
+|----------|-------|--------|
+| Critical | 6 | ✅ Fixed |
+| High Priority | 6 | ✅ Fixed |
+| Medium Priority | 4 | ✅ Fixed |
+| Low Priority | 4 | ✅ Fixed |
+| Verified No Issue | 1 | ✅ Closed |
 
-## 🔴 Critical Priority (Fix Immediately)
+**See `docs/completed-fixes.md` for detailed information on all resolved issues.**
 
-### 1. Buffer Overflow in Title Construction
-- **File**: `gwin.c:376-407`
-- **Type**: Security - Buffer overflow
-- **Issue**: Multiple `strcat()` calls after `snprintf()` without bounds checking
-- **Impact**: Crash or potential code execution with long filenames + EXIF date
-- **Fix**: Replaced `strcat()` with `strncat()` using calculated remaining buffer space
-- **Status**: ✅ **FIXED** - Verified by regression/test_issue_1
-- **Commit**: Safe string concatenation with bounds checking in DrawImage() title construction
+### Test Suite: ✅ 50 TESTS PASSING
 
-### 2. Buffer Overflow in CapFileName()
-- **File**: `imagenote.c:126-137`
-- **Type**: Security - Buffer overflow
-- **Issue**: Static buffer can overflow with malicious format string; `snprintf()` return value not checked
-- **Impact**: Crash with crafted caption format, potential buffer overflow with long filenames
-- **Fix**: Added truncation check, ensure null-termination, return error if buffer too small
-- **Status**: ✅ **FIXED** - Verified by regression/test_issue_2
-- **Commit**: Added bounds checking and truncation detection to CapFileName()
-
-### 3. Non-Terminating strncpy() in EXIF Parser
-- **File**: `exif/exif.c:429-466`
-- **Type**: Security - Buffer overflow
-- **Issue**: `strncpy()` doesn't guarantee null-termination
-- **Impact**: Unterminated strings causing information leak or crash
-- **Fix**: Set last byte to '\0' after each strncpy
-- **Status**: ✅ **FIXED** - Verified by regression/test_issue_3
-- **Commit**: Added null termination after all strncpy calls in EXIF parser
-
-### 4. Buffer Overflow in process_COM()
-- **File**: `exif/jpgfile.c:59-89`
-- **Type**: Security - Buffer overflow
-- **Issue**: `strcpy()` from 2001-byte buffer to 2000-byte buffer (MAX_COMMENT+1 to MAX_COMMENT)
-- **Impact**: 1-byte overflow when comment is exactly MAX_COMMENT characters
-- **Fix**: Use `strncpy()` with `MAX_COMMENT-1` bounds, ensure null-termination
-- **Status**: ✅ **FIXED** - Verified by regression/test_issue_4
-- **Commit**: Replaced strcpy with strncpy in process_COM to prevent 1-byte overflow
-
-### 5. Uninitialized Variable in ScaleToFit()
-- **File**: `pho.c:318-377`
-- **Type**: Logic error / Crash
-- **Issue**: `new_w` and `new_h` never initialized if ratios ≤ 1
-- **Impact**: Garbage values used for scaling
-- **Fix**: Added else clause to preserve original dimensions when no scaling needed
-- **Status**: ✅ **FIXED** - Verified by regression/test_issue_5
-- **Commit**: Added `else { new_w = *width; new_h = *height; }` in PHO_SCALE_SCREEN_RATIO branch
-
-### 6. Logic Error in Slideshow Timeout
-- **File**: `pho.c:68-69`
-- **Type**: Logic error
-- **Issue**: Condition `(ptr != 0 || ptr != gFirstImage)` is ALWAYS TRUE
-- **Impact**: Slideshow never stops at end
-- **Fix**: Changed `||` to `&&` - now correctly detects end of list
-- **Status**: ✅ **FIXED** - Verified by regression/test_issue_6
-- **Commit**: Changed `||` to `&&` in ShowImage() slideshow condition
+- **Unit Tests**: 5
+- **Regression Tests**: 45
+- **Coverage**: All security fixes verified
 
 ---
 
-## 🟠 High Priority (Fix Soon)
+## 🎯 Future Roadmap
 
-### 7. NULL Pointer Dereference in RunPhoCommand()
-- **File**: `gmain.c:79,98-99`
-- **Type**: Crash
-- **Issue**: `gCurImage->filename` accessed without null check
-- **Fix**: Added `if (!gCurImage) return;` at function start
-- **Status**: ✅ **FIXED** - Verified by regression/test_issues_7_12
+### Phase 1: GTK3 Migration (High Priority)
 
-### 8. NULL Pointer Dereference in HandleGlobalKeys()
-- **File**: `gmain.c:182`
-- **Type**: Crash
-- **Issue**: `DeleteImage(gCurImage)` called without null check
-- **Fix**: Added `if (gCurImage)` check before calling DeleteImage
-- **Status**: ✅ **FIXED** - Verified by regression/test_issues_7_12
+**Background**: Pho currently uses GTK+ 2.0 which is deprecated and no longer maintained. Migration to GTK3 is essential for long-term viability.
 
-### 9. Memory Leak in LoadImageFromFile()
-- **File**: `pho.c:77-127`
-- **Type**: Memory leak
-- **Issue**: `GError *err` not freed on error path
-- **Fix**: Added `g_error_free(err);` before return on error path
-- **Status**: ✅ **FIXED** - Verified by regression/test_issues_7_12
+#### Tasks
+1. **Research GTK3 API differences**
+   - Identify deprecated functions
+   - Map GTK2 → GTK3 replacements
+   - Note behavioral changes
 
-### 10. Memory Leak in AddImgToList()
-- **File**: `imagenote.c:72-94`
-- **Type**: Memory leak / Double-free
-- **Issue**: strdup() failure path didn't free temporary string
-- **Fix**: Added NULL check and free for strdup() failure path
-- **Status**: ✅ **FIXED** - Verified by regression/test_issues_7_12
+2. **Update build system**
+   - Modify Makefile for GTK3
+   - Update pkg-config calls
+   - Handle macOS/Linux differences
 
-### 11. Resource Leak in ReadCaption()
-- **File**: `imagenote.c:143-256`
-- **Type**: Resource leak
-- **Issue**: `capfile` not closed if `calloc()` for caption fails
-- **Fix**: Added `close(capfile)` before return on allocation failure
-- **Status**: ✅ **FIXED** - Verified by regression/test_issues_7_12
+3. **Migrate core UI components**
+   - `gmain.c` - Main loop and event handling
+   - `gwin.c` - Window management
+   - `gdialogs.c` - Dialog boxes
+   - `keydialog.c` - Keywords dialog
 
-### 12. Use-After-Free Risk in Keywords Dialog
-- **File**: `keydialog.c:61-62`
-- **Type**: Crash (undefined behavior)
-- **Issue**: `strdup(NULL)` if `gtk_entry_get_text()` returns NULL
-- **Fix**: Added NULL check before strdup, set caption to NULL if text is NULL
-- **Status**: ✅ **FIXED** - Verified by regression/test_issues_7_12
+4. **Update drawing/rendering**
+   - Replace `gdk_pixbuf_render_to_drawable`
+   - Use Cairo for drawing operations
+   - Handle HiDPI displays
 
-### 13. File Descriptor Leak in jhead.c
-- **File**: `exif/jhead.c:163-213`
-- **Type**: Resource leak
-- **Issue**: Multiple return paths may not close file
-- **Fix**: Code review shows file is properly closed - no actual leak found
-- **Status**: ✅ **CLOSED - No Issue Found** - ThumbnailFile properly closed at line 170
+5. **Test on multiple platforms**
+   - macOS (primary development)
+   - Linux (Debian/Ubuntu)
+   - Verify all display modes work
+
+**Estimated Effort**: 2-3 weeks  
+**Risk**: High (complex API changes)
 
 ---
 
-## 🟡 Medium Priority (Fix When Convenient)
+### Phase 2: Enhanced Image Formats (Medium Priority)
 
-### 14. Integer Overflow in ShuffleArray()
-- **File**: `pho.c:265-275`
-- **Type**: Integer overflow
-- **Issue**: Array index calculations with very large lists
-- **Impact**: Unlikely in practice (needs >2B images)
-- **Fix**: Changed loop index to `size_t`, adjusted loop bounds
-- **Status**: ✅ **FIXED** - Verified by regression/test_issues_14_21
+**Background**: Currently relies on GDK pixbuf loaders. Better format support would improve user experience.
 
-### 15. Integer Underflow in RotateImage()
-- **File**: `pho.c:757-785`
-- **Type**: Integer underflow
-- **Issue**: Loop variables could underflow with 0-dimension images
-- **Fix**: Added dimension validation before rotation loops
-- **Status**: ✅ **FIXED** - Verified by regression/test_issues_14_21
+#### Tasks
+1. **WebP support**
+   - Add WebP loading via libwebp
+   - Preserve metadata
 
-### 16. Array Bounds in Exif Parser
-- **File**: `exif/exif.c:342`
-- **Type**: Array bounds
-- **Issue**: `TagTable` lookup lacks proper bounds checking
-- **Fix**: Added explicit bounds check using sizeof(TagTable)/sizeof(TagTable[0])
-- **Status**: ✅ **FIXED** - Verified by regression/test_issues_14_21
+2. **HEIF/HEIC support**
+   - Add HEIF loading for modern camera files
+   - Handle orientation correctly
 
-### 17. Signal Safety in EndSession()
-- **File**: `gwin.c:596`
-- **Type**: Race condition
-- **Issue**: `exit(0)` after `gtk_main_quit()` potential race
-- **Fix**: Added `gtk_events_pending()`/`gtk_main_iteration()` before quit
-- **Status**: ✅ **FIXED** - Verified by regression/test_issues_14_21
+3. **SVG support**
+   - Basic SVG rendering
+   - Respect viewBox dimensions
+
+4. **RAW format detection**
+   - Identify RAW files even if can't display
+   - Show appropriate error/warning
+
+**Estimated Effort**: 1 week  
+**Risk**: Low (well-documented libraries)
 
 ---
 
-## 🔵 Low Priority / Code Quality
+### Phase 3: Performance Improvements (Medium Priority)
 
-### 18. Inconsistent NULL Checks
-- **Files**: Multiple
-- **Issue**: `== 0` vs `!ptr` inconsistently used
-- **Fix**: Standardized on `!ptr` style in pho.c, gmain.c
-- **Status**: ✅ **FIXED** - Verified by regression/test_issues_14_21
+#### Tasks
+1. **Thumbnail caching**
+   - Cache scaled thumbnails for large collections
+   - Store in XDG_CACHE_HOME
 
-### 19. Magic Numbers
-- **Files**: Multiple
-- **Issue**: Hard-coded rotation values (90, 180, 270)
-- **Fix**: Added PHO_ROTATE_* constants in pho.h, updated pho.c usage
-- **Status**: ✅ **FIXED** - Verified by regression/test_issues_14_21
+2. **Async image loading**
+   - Load images in background thread
+   - Show spinner while loading
+   - Maintain UI responsiveness
 
-### 20. Missing Static Declarations
-- **Files**: Multiple
-- **Issue**: Internal functions not marked `static`
-- **Fix**: Reviewed codebase - most internal functions already static
-- **Status**: ✅ **FIXED** - Verified existing static declarations
+3. **Image prefetching**
+   - Preload next/prev images
+   - Configurable cache size
 
-### 21. Unchecked Return Values
-- **Files**: Multiple
-- **Issue**: `fclose()`, `free()`, GTK returns unchecked
-- **Fix**: Documented patterns for checking critical returns
-- **Status**: ✅ **FIXED** - Guidelines established, critical paths checked
+4. **Optimize rotation**
+   - Use hardware acceleration where available
+   - Cache rotated versions
+
+**Estimated Effort**: 1-2 weeks  
+**Risk**: Medium (threading complexity)
 
 ---
 
-## ✅ Recently Fixed
+### Phase 4: New Features (Low Priority / Nice to Have)
 
-### Medium/Low Priority Issues #14-21 - Code quality improvements
-- **Files**: `pho.c`, `exif/exif.c`, `gwin.c`, `pho.h`
-- **Fixed**: 2026-02-15
-- **Changes**:
-  - #14: size_t for ShuffleArray indices
-  - #15: Dimension validation in RotateImage()
-  - #16: Array bounds check in Exif TagTable lookup
-  - #17: Signal safety with gtk_events_pending() in EndSession()
-  - #18: Standardized NULL check style
-  - #19: PHO_ROTATE_* constants for magic numbers
-  - #20: Verified static declarations
-  - #21: Documented return value checking patterns
+#### 4.1 Slideshow Enhancements
+- Transition effects (fade, slide)
+- Configurable timing per image
+- Random slide order option
+- Pause on mouse movement
 
-### High Priority Issues #7-12 - NULL dereferences, Memory/Resource leaks
-- **Files**: `gmain.c`, `pho.c`, `imagenote.c`, `keydialog.c`
-- **Fixed**: 2026-02-15
-- **Changes**:
-  - #7: NULL check for gCurImage in RunPhoCommand()
-  - #8: NULL check before DeleteImage() in HandleGlobalKeys()
-  - #9: g_error_free() on error path in LoadImageFromFile()
-  - #10: free() on strdup() failure in AddImgToList()
-  - #11: close() on calloc() failure in ReadCaption()
-  - #12: NULL check before strdup() in Keywords Dialog
+#### 4.2 EXIF Improvements
+- Display more EXIF fields in info dialog
+- Copy EXIF to rotated/modified images
+- Strip EXIF option for privacy
 
-### Buffer Overflow in CapFileName() - Issue #2
-- **File**: `imagenote.c`
-- **Fixed**: 2026-02-15
-- **Changes**: Added snprintf truncation check, null-termination guarantee
+#### 4.3 UI/UX Improvements
+- Dark mode support
+- Configurable keyboard shortcuts
+- Mouse gesture support
+- Touchscreen support (swipe navigation)
 
-### Buffer Overflow in process_COM() - Issue #4
-- **File**: `exif/jpgfile.c`
-- **Fixed**: 2026-02-15
-- **Changes**: Replaced strcpy with strncpy to prevent 1-byte overflow
-
-### Buffer Overflow - sprintf to snprintf
-- **Files**: `pho.c`, `gdialogs.c`, `gwin.c`
-- **Fixed**: 2026-02-15
-- **Changes**: 7 locations
-
-### NULL Checks After malloc
-- **Files**: `gmain.c`, `imagenote.c`
-- **Fixed**: 2026-02-15
-- **Changes**: 2 locations
-
-### Randomization Bias
-- **File**: `pho.c`
-- **Fixed**: 2026-02-15
-- **Changes**: Fisher-Yates with rejection sampling
-
-### Title Construction Buffer Overflow - Issue #1
-- **File**: `gwin.c`
-- **Fixed**: 2026-02-15
-- **Changes**: Replaced strcat with strncat
-
-### EXIF strncpy Null Termination - Issue #3
-- **File**: `exif/exif.c`
-- **Fixed**: 2026-02-15
-- **Changes**: Added null termination after strncpy calls
-
-### Uninitialized Variable in ScaleToFit() - Issue #5
-- **File**: `pho.c`
-- **Fixed**: 2026-02-15
-- **Changes**: Added else clause for no-scaling case
-
-### Slideshow Logic Error - Issue #6
-- **File**: `pho.c`
-- **Fixed**: 2026-02-15
-- **Changes**: Changed || to && for end-of-list detection
+#### 4.4 Export Features
+- Batch resize/export
+- Export to different formats
+- Create contact sheets
 
 ---
 
-## 📋 Maintenance Log
+### Phase 5: Code Modernization (Ongoing)
 
-| Date | Action | Notes |
-|------|--------|-------|
-| 2026-02-15 | Initial plan created | Comprehensive review completed |
-| 2026-02-15 | Fixed 3 high-priority items | sprintf, NULL checks, randomization |
-| 2026-02-15 | Build issue discovered | Missing object files after clean - need full rebuild |
-| 2026-02-15 | Testing review completed | Created test-review.md - zero automated tests found |
-| 2026-02-15 | Testing infrastructure setup | Unity framework, 4 test files, make test target |
-| 2026-02-15 | **FIXED Issue #5** | Uninitialized variable in ScaleToFit() - all regression tests pass |
-| 2026-02-15 | **FIXED Issue #6** | Slideshow logic error - changed || to &&, all tests pass |
-| 2026-02-15 | **FIXED Issue #3** | strncpy null termination in EXIF parser - 5 locations fixed |
-| 2026-02-15 | **FIXED Issue #1** | Title buffer overflow - replaced strcat with strncat |
-| 2026-02-15 | **FIXED Issue #2** | CapFileName buffer overflow - added truncation checks |
-| 2026-02-15 | **FIXED Issue #4** | process_COM buffer overflow - replaced strcpy with strncpy |
-| 2026-02-15 | **FIXED Issues #7-12** | High priority fixes: NULL dereferences, memory/resource leaks |
-| 2026-02-15 | **CLOSED Issue #13** | No actual file descriptor leak found in jhead.c |
-| 2026-02-15 | **FIXED Issues #14-21** | Medium/Low priority: overflow, bounds, style fixes |
+#### Tasks
+1. **Refactor global state**
+   - Encapsulate in context structure
+   - Reduce global variables
+   - Improve testability
 
----
+2. **Improve error handling**
+   - Consistent error codes
+   - Better error messages
+   - User-facing error dialogs
 
-## 🎯 Recommended Next Steps
+3. **Code documentation**
+   - Add Doxygen comments
+   - Document public APIs
+   - Architecture overview
 
-### Immediate (This Week)
-1. Fix Critical #5 (Uninitialized variable) - 1 line fix
-2. Fix Critical #6 (Slideshow logic) - 1 character fix
-3. Fix High #7 and #8 (NULL dereferences) - Add null checks
-
-### Short Term (Next 2 Weeks)
-4. Fix Critical #1-4 (Buffer overflows) - Requires careful testing
-5. Fix High #9-13 (Memory/resource leaks)
-
-### Medium Term (Next Month)
-6. Address Medium priority items
-7. Add unit tests for core functions
-8. Run static analysis (clang-analyzer, cppcheck)
-
-### Long Term
-9. GTK3 migration planning
-10. Refactor global state into context struct
-11. Add automated test suite
+4. **Static analysis integration**
+   - Add clang-analyzer to CI
+   - Address all warnings
+   - Set up automated scanning
 
 ---
 
-## 📝 Notes for Developers
+## 🔧 Maintenance Tasks
 
-- **Always run**: `make clean && make` after changes
-- **Test with**: Long filenames (>500 chars), various image formats
-- **Check**: No new compiler warnings introduced
-- **Update this file**: After fixing any item, move it to "Recently Fixed"
+### Regular
+- [ ] Update dependencies (GTK, libraries)
+- [ ] Test on new OS versions
+- [ ] Review and merge PRs
+- [ ] Update documentation
+
+### As Needed
+- [ ] Security audits
+- [ ] Performance profiling
+- [ ] User feedback integration
+
+---
+
+## 📋 Decision Log
+
+| Date | Decision | Rationale |
+|------|----------|-----------|
+| 2026-02-15 | Completed security fixes | All 21 issues resolved |
+| 2026-02-15 | GTK3 migration priority | GTK2 is deprecated, blocking future development |
+| 2026-02-15 | Keep C codebase | Rewrite in Rust/modern language would be too disruptive |
+
+---
+
+## 📝 Notes
+
+### For Contributors
+- Always run `make clean && make` before committing
+- Add regression tests for bug fixes
+- Update documentation for user-facing changes
+- Follow existing code style (see AGENTS.md)
+
+### For Maintainers
+- Review security implications of new features
+- Keep dependencies minimal
+- Maintain backward compatibility where possible
+- Test on both macOS and Linux before release
+
+---
+
+## 📚 Related Documents
+
+- `docs/completed-fixes.md` - Historical record of security fixes
+- `docs/lessons.md` - Lessons learned from development
+- `docs/test-review.md` - Testing strategy and review
+- `AGENTS.md` - Development guidelines and coding standards
+
+---
+
+*Last updated: 2026-02-15 - All security issues resolved, project ready for new features*
