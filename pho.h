@@ -7,15 +7,8 @@
 
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
-/* Want this include to be the smallest possible include which
- * grabs GTK_MAJOR_VERSION.
- * However, gtk2 has internal errors that produce an ugly bunch
- * of deprecation warnings, and they refuse to fix them.
- * This turns off those warnings.
- */
-G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+/* GTK3 single header include - gdk is now part of gtk */
 #include <gtk/gtk.h>
-G_GNUC_END_IGNORE_DEPRECATIONS
 
 /* Images are kept in a doubly linked list.
  * gFirstImage is the beginning;

@@ -44,25 +44,33 @@ All 21 security issues and code quality improvements have been resolved:
 
 **Background**: Pho currently uses GTK+ 2.0 which is deprecated and no longer maintained. Migration to GTK3 is essential for long-term viability.
 
+#### Current Status (2026-02-15)
+- ✅ Branch `gtk3-migration-phase1` created
+- ✅ Build system updated (Makefile uses gtk+-3.0)
+- ✅ Header includes updated in pho.h
+- ✅ Compilation attempted - **47 errors identified** (see docs/todo.md)
+
 #### Tasks
-1. **Research GTK3 API differences**
-   - Identify deprecated functions
-   - Map GTK2 → GTK3 replacements
+1. **Research GTK3 API differences** ✅
+   - ✅ Deprecated functions identified (see compilation report below)
+   - ✅ Map GTK2 → GTK3 replacements documented
    - Note behavioral changes
 
-2. **Update build system**
-   - Modify Makefile for GTK3
-   - Update pkg-config calls
-   - Handle macOS/Linux differences
+2. **Update build system** ✅
+   - ✅ Modify Makefile for GTK3
+   - ✅ Update pkg-config calls
+   - ✅ Handle macOS/Linux differences (GTK3 installed via Homebrew)
 
-3. **Migrate core UI components**
-   - `gmain.c` - Main loop and event handling
-   - `gwin.c` - Window management
-   - `gdialogs.c` - Dialog boxes
-   - `keydialog.c` - Keywords dialog
+3. **Fix compilation errors** (47 errors across 6 files)
+   - `gmain.c` - Key symbol constants (GDK_f → GDK_KEY_f)
+   - `gwin.c` - Widget struct access, Cairo drawing
+   - `gdialogs.c` - Signal handlers, widget visibility checks
+   - `keydialog.c` - Signal handlers, hbox deprecation
+   - `winman.c` - X11-specific headers (gdk/gdkx.h)
+   - `focustest.c` - X11-specific headers (gdk/gdkx.h)
 
 4. **Update drawing/rendering**
-   - Replace `gdk_pixbuf_render_to_drawable`
+   - Replace `gdk_pixbuf_render_to_drawable` with Cairo
    - Use Cairo for drawing operations
    - Handle HiDPI displays
 

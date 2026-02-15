@@ -3,11 +3,11 @@
 VERSION = 1.0
 
 # Locate the gtk/gdk libraries (thanks to nev for this!)
-GTKFLAGS := $(shell pkg-config --cflags gtk+-2.0 gdk-2.0 2> /dev/null)
+GTKFLAGS := $(shell pkg-config --cflags gtk+-3.0 2> /dev/null)
 CFLAGS += -g -Wall -pedantic -DVERSION='"$(VERSION)"' $(GTKFLAGS)
 
-XLIBS := $(shell pkg-config --libs gtk+-2.0 > /dev/null)
-GLIBS := $(shell pkg-config --libs gtk+-2.0 gdk-2.0)
+XLIBS := $(shell pkg-config --libs gtk+-3.0 > /dev/null)
+GLIBS := $(shell pkg-config --libs gtk+-3.0)
 
 CWD = $(shell pwd)
 CWDBASE = $(shell basename `pwd`)
