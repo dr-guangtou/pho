@@ -112,8 +112,23 @@ $ otool -L pho | grep gtk
 - [x] Runtime tested with actual images
 - [x] Documentation updated (README.md, plan.md, todo.md)
 - [x] Merge to master branch ✅
+- [x] Window focus feature (bring to front on launch) ✅
 - [ ] Create release tag
 - [ ] Linux platform verification (📌 Pinned - not required for current use)
+
+### Recent Feature: Window Focus on Launch
+
+**Branch**: `fix/macos-window-focus` (merged to master)  
+**Status**: ✅ **Window comes to front**  
+**Known Limitation**: Keyboard focus requires manual click (macOS Terminal limitation)
+
+**Implementation**: Uses `gtk_window_set_keep_above()` hack with `g_idle_add()` deferred execution to force window to front when launching from terminal on macOS.
+
+**Technical Details**:
+- Deferred execution via `g_idle_add()` ensures window is realized before raising
+- Temporary `keep_above` forces window stacking order
+- `gtk_window_present()` and `gtk_widget_grab_focus()` attempted for keyboard focus
+- Keyboard focus limitation appears to be macOS security policy for terminal-launched apps
 
 ---
 
