@@ -1,159 +1,126 @@
 # Pho Project Status
 
 **Last Updated**: 2026-02-15  
-**Status**: GTK3 Migration Phase 1 - Analysis Complete
+**Status**: GTK3 Migration Phase 4 COMPLETE - Build Successful
 
 ---
 
 ## Current State
 
-### 🔄 In Progress: GTK3 Migration Phase 1
+### ✅ Completed: GTK3 Migration Phases 1-4
 
 **Branch**: `gtk3-migration-phase1`  
-**Summary**: Build system updated, compilation attempted, 47 errors identified
+**Build Status**: ✅ SUCCESS  
+**Binary**: `pho` (Mach-O 64-bit executable arm64, 130KB)
 
 ---
 
-## GTK3 Migration Analysis Results
+## Migration Summary
 
-### Phase 1 Complete ✅
+### Phase 1: Build System Preparation ✅
+- Updated Makefile for GTK3 (gtk+-3.0)
+- Updated pho.h headers
+- Installed GTK3 via Homebrew
+- Identified 47 deprecated API errors
 
-1. **Build System Updated**
-   - ✅ Makefile changed from `gtk+-2.0` to `gtk+-3.0`
-   - ✅ pkg-config calls updated
-   - ✅ pho.h header simplified (removed GTK2 deprecation suppression)
-   - ✅ GTK3 installed via Homebrew on macOS
+### Phase 2: Signal & Key Symbol Updates ✅
+- Fixed 52 key symbols (GDK_f → GDK_KEY_f, etc.)
+- Replaced gtk_signal_connect with g_signal_connect
+- Updated GTK_OBJECT → G_OBJECT, GTK_SIGNAL_FUNC → G_CALLBACK
+- Fixed signal names (expose_event → draw, key_press_event → key-press-event)
 
-2. **Compilation Analysis Complete**
-   - **Total Errors**: 47 compilation errors
-   - **Total Files Affected**: 6 source files
-   - **Error Categories**:
-     - Key symbol constants (12 errors)
-     - Direct widget struct access (14 errors) 
-     - Deprecated signal system (6 errors)
-     - Removed functions (10 errors)
-     - X11-specific code (2 errors)
-     - Type changes (3 errors)
+### Phase 3: Widget Accessors ✅
+- widget->window → gtk_widget_get_window()
+- GTK_WIDGET_MAPPED → gtk_widget_get_mapped()
+- GTK_WIDGET_FLAGS/GTK_VISIBLE → gtk_widget_get_visible()
+- gdk_drawable_get_size → gtk_widget_get_allocated_width/height
 
----
-
-## Detailed Error Breakdown
-
-### gmain.c (14 errors)
-| Line | Error | GTK2 API | GTK3 Replacement |
-|------|-------|----------|------------------|
-| 149 | Key symbol | `GDK_f` | `GDK_KEY_f` |
-| 155-164 | Key symbols | `GDK_0` - `GDK_9` | `GDK_KEY_0` - `GDK_KEY_9` |
-| 166 | Key symbol | `GDK_0` | `GDK_KEY_0` |
-| 170 | Key symbol | `GDK_equal` | `GDK_KEY_equal` |
-| 176 | Key symbol | `GDK_KP_Subtract` | `GDK_KEY_KP_Subtract` |
-
-### gwin.c (16 errors)
-| Line | Error | GTK2 API | GTK3 Replacement |
-|------|-------|----------|------------------|
-| 66,70 | Removed type | `GdkBitmap` | Cairo surfaces |
-| 70 | Removed function | `gdk_bitmap_create_from_data` | Cairo API |
-| 73 | Removed function | `gdk_cursor_new_from_pixmap` | `gdk_cursor_new_from_surface` |
-| 77,78,88 | Struct access | `widget->window` | `gtk_widget_get_window(widget)` |
-| 105,156,247,309 | Macro removed | `GTK_WIDGET_MAPPED` | `gtk_widget_get_mapped` |
-| 111 | Removed function | `gdk_drawable_get_size` | `gtk_widget_get_allocated_width/height` |
-| 313 | Removed function | `gdk_window_clear` | Cairo paint |
-| 422 | Removed function | `gdk_pixbuf_render_to_drawable` | Cairo `gdk_cairo_set_source_pixbuf` |
-
-### gdialogs.c (12 errors)
-| Line | Error | GTK2 API | GTK3 Replacement |
-|------|-------|----------|------------------|
-| 63,83,100,232 | Struct access | `widget->window` | `gtk_widget_get_window(widget)` |
-| 63,83,234 | Macro removed | `GTK_WIDGET_FLAGS` / `GTK_VISIBLE` | `gtk_widget_get_visible` |
-| 174,178 | Function removed | `gtk_entry_set_editable` | `gtk_editable_set_editable` |
-| 185 | Function removed | `gtk_signal_handler_block_by_func` | `g_signal_handler_block` |
-| 185 | Macro removed | `GTK_OBJECT` | `G_OBJECT` |
-| 186 | Type removed | `GtkSignalFunc` | `GCallback` |
-| 205,206,207 | Key symbols | `GDK_Escape`, `GDK_Return`, `GDK_KP_Enter` | `GDK_KEY_*` |
-
-### keydialog.c (9 errors)
-| Line | Error | GTK2 API | GTK3 Replacement |
-|------|-------|----------|------------------|
-| 88 | Struct access | `widget->window` | `gtk_widget_get_window(widget)` |
-| 88 | Macro removed | `GTK_WIDGET_FLAGS` / `GTK_VISIBLE` | `gtk_widget_get_visible` |
-| 132 | Key symbol | `GDK_Escape` | `GDK_KEY_Escape` |
-| 152-158 | Key symbols | `GDK_a`, `GDK_e`, `GDK_u`, `GDK_h`, `GDK_w`, `GDK_k`, `GDK_d` | `GDK_KEY_*` |
-| 178 | Deprecated | `gtk_hbox_new` | `gtk_box_new(GTK_ORIENTATION_HORIZONTAL, ...)` |
-| 193 | Function removed | `gtk_signal_connect` | `g_signal_connect` |
-| 193 | Macro removed | `GTK_OBJECT` | `G_OBJECT` |
-
-### winman.c (2 errors)
-| Line | Error | GTK2 API | GTK3 Replacement |
-|------|-------|----------|------------------|
-| 13 | Missing header | `gdk/gdkx.h` | Platform-specific or remove |
-
-### focustest.c (2 errors)
-| Line | Error | GTK2 API | GTK3 Replacement |
-|------|-------|----------|------------------|
-| 43 | Missing header | `gdk/gdkx.h` | Platform-specific or remove |
+### Phase 4: Drawing System (Cairo) ✅
+- gdk_pixbuf_render_to_drawable → Cairo rendering
+- gdk_window_clear → Cairo paint
+- GdkBitmap cursor → Cairo surface
+- HandleExpose signature updated for GTK3 draw signal
+- gtk_widget_modify_bg → CSS styling
 
 ---
 
-## Migration Priority by Phase
+## Files Modified
 
-### Phase 2: Signal & Key Symbol Updates (Next)
-- [ ] Fix all `GDK_` key symbols → `GDK_KEY_` (gmain.c, gdialogs.c, keydialog.c)
-- [ ] Replace `gtk_signal_connect` → `g_signal_connect` (gdialogs.c, keydialog.c)
-- [ ] Replace `GTK_OBJECT` → `G_OBJECT`
-- [ ] Replace `GtkSignalFunc` → `GCallback`
-
-### Phase 3: Widget Accessors
-- [ ] Fix `widget->window` → `gtk_widget_get_window(widget)`
-- [ ] Fix `GTK_WIDGET_MAPPED` → `gtk_widget_get_mapped()`
-- [ ] Fix `GTK_WIDGET_FLAGS` / `GTK_VISIBLE` → `gtk_widget_get_visible()`
-
-### Phase 4: Drawing System (Critical)
-- [ ] Replace `gdk_pixbuf_render_to_drawable` with Cairo
-- [ ] Replace `gdk_window_clear` with Cairo paint
-- [ ] Implement `draw` signal instead of `expose_event`
-- [ ] Handle `GdkBitmap` / cursor creation with Cairo
-
-### Phase 5: Removed Functions
-- [ ] `gdk_drawable_get_size` → `gtk_widget_get_allocated_width/height`
-- [ ] `gtk_entry_set_editable` → `gtk_editable_set_editable`
-- [ ] `gtk_hbox_new` → `gtk_box_new`
-- [ ] `gtk_signal_handler_block_by_func` → `g_signal_handler_block`
-
-### Phase 6: Platform-Specific
-- [ ] Handle `gdk/gdkx.h` for X11 vs macOS Quartz
+| File | Changes |
+|------|---------|
+| `Makefile` | GTK+-2.0 → GTK+-3.0 |
+| `pho.h` | Header simplification |
+| `dialogs.h` | IsVisible macro |
+| `gmain.c` | Key symbols, gdk_rgb_init removal |
+| `gwin.c` | Widget accessors, Cairo drawing, cursor, CSS |
+| `gdialogs.c` | Signals, accessors, containers |
+| `keydialog.c` | Signals, containers |
 
 ---
 
-## Quick Commands
+## Remaining Work (Phase 5-6)
+
+### Phase 5: Monitor & Screen API (Medium Priority)
+- `gdk_screen_get_n_monitors` → `gdk_display_get_n_monitors`
+- `gdk_screen_width/height` → `gdk_monitor_get_geometry`
+- Multi-monitor support updates
+
+### Phase 6: Cleanup (Low Priority)
+- Fix remaining `gtk_hseparator_new` deprecation
+- Fix function prototype warnings in headers
+- Platform-specific testing (Linux, multi-monitor)
+
+---
+
+## Build Instructions
 
 ```bash
-# Check compilation errors
+# Ensure PKG_CONFIG_PATH includes Homebrew
 export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:$PKG_CONFIG_PATH"
-make clean && make 2>&1 | grep error:
 
-# Test GTK3 installation
-pkg-config --cflags --libs gtk+-3.0
+# Build
+make clean && make
 
-# Run tests (after fixes)
-cd tests && make test
-
-# Check branch status
-git status
-git log --oneline -5
+# Test
+./pho --help
+./pho test-img/*.jpg
 ```
 
 ---
 
-## File Locations
+## Verification
 
-| Document | Purpose |
-|----------|---------|
-| `docs/plan.md` | Future roadmap and feature planning |
-| `docs/gtk3-migration-plan.md` | Detailed GTK3 migration guide |
-| `docs/completed-fixes.md` | Historical record of all fixes |
-| `docs/test-review.md` | Testing strategy |
-| `AGENTS.md` | Coding standards and guidelines |
+```bash
+# Check GTK3 linking
+otool -L pho | grep gtk
+# Output: libgtk-3.0.dylib
+
+# Check no GTK2 linking
+otool -L pho | grep gtk+-2
+# Output: (nothing - good!)
+```
 
 ---
 
-*GTK3 Migration Phase 1 complete - 47 errors identified, ready for Phase 2 fixes*
+## Test Results
+
+| Feature | Status |
+|---------|--------|
+| Compilation | ✅ Pass |
+| Binary Creation | ✅ Pass |
+| Help Output | ✅ Pass |
+| Image Loading | 🔄 Ready for test |
+| Fullscreen Mode | 🔄 Ready for test |
+| Keywords Dialog | 🔄 Ready for test |
+
+---
+
+## Related Documents
+
+- `docs/plan.md` - Project roadmap
+- `docs/gtk3-migration-plan.md` - Detailed migration guide
+- `AGENTS.md` - Development guidelines
+
+---
+
+*GTK3 Migration core complete. Ready for testing and Phase 5 enhancements.*

@@ -43,9 +43,6 @@ int sDragOffsetY = 0;
 int sDragStartX = 0;
 int sDragStartY = 0;
 
-/* Initialize the "black" color */
-static GdkColor sBlack = { 0x0000, 0x0000, 0x0000 };
-
 /* gtk related window attributes */
 GtkWidget *gWin = 0;
 static GtkWidget *sDrawingArea = 0;
@@ -308,11 +305,13 @@ void DrawImage()
 
     if (gDisplayMode == PHO_DISPLAY_PRESENTATION) {
         gint width, height;
-        /* GTK3: Use cairo to clear window background */
-        cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(sDrawingArea));
+        /* GTK3: Use cairo to clear window background (via drawing frame API) */
+        GdkWindow *window = gtk_widget_get_window(sDrawingArea);
+        GdkDrawingContext *context = gdk_window_begin_draw_frame(window, NULL);
+        cairo_t *cr = gdk_drawing_context_get_cairo_context(context);
         cairo_set_source_rgb(cr, 0, 0, 0);
         cairo_paint(cr);
-        cairo_destroy(cr);
+        gdk_window_end_draw_frame(window, context);
 
         /* Center the image. This has to be done according to
          * the current window size, not the phys monitor size,
@@ -421,11 +420,13 @@ void DrawImage()
         }
     }
 
-    /* GTK3: Use Cairo for drawing */
-    cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(sDrawingArea));
+    /* GTK3: Use Cairo for drawing (via drawing frame API) */
+    GdkWindow *draw_window = gtk_widget_get_window(sDrawingArea);
+    GdkDrawingContext *draw_context = gdk_window_begin_draw_frame(draw_window, NULL);
+    cairo_t *cr = gdk_drawing_context_get_cairo_context(draw_context);
     gdk_cairo_set_source_pixbuf(cr, gImage, dstX, dstY);
     cairo_paint(cr);
-    cairo_destroy(cr);
+    gdk_window_end_draw_frame(draw_window, draw_context);
 
     UpdateInfoDialog(gCurImage);
 }
@@ -439,12 +440,14 @@ HandlePress(GtkWidget *widget, GdkEventButton *event)
     /*  grab with owner_events == TRUE so the popup's widgets can
      *  receive events. we filter away events outside this toplevel
      *  away in button_press()
+     *  GTK3: Use gdk_device_grab instead of gdk_pointer_grab
      */
-    if (gdk_pointer_grab (gtk_widget_get_window (widget), TRUE,
+    GdkDevice *device = gdk_event_get_device((GdkEvent*)event);
+    if (gdk_device_grab (device, gtk_widget_get_window(widget), GDK_OWNERSHIP_WINDOW, TRUE,
                           GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK
                           | GDK_POINTER_MOTION_MASK
                           | GDK_POINTER_MOTION_HINT_MASK,
-                          NULL, NULL, GDK_CURRENT_TIME) != GDK_GRAB_SUCCESS)
+                          NULL, GDK_CURRENT_TIME) != GDK_GRAB_SUCCESS)
         printf("Couldn't grab!\n");
     sDragStartX = event->x;
     sDragStartY = event->y;
@@ -459,8 +462,9 @@ HandleRelease(GtkWidget *widget, GdkEventButton *event)
         return TRUE;
 
     /* Ungrab, stop listening for motion */
-    gdk_display_pointer_ungrab (gtk_widget_get_display(widget),
-                                GDK_CURRENT_TIME);
+    /* GTK3: Use gdk_device_ungrab instead of gdk_display_pointer_ungrab */
+    GdkDevice *device = gdk_event_get_device((GdkEvent*)event);
+    gdk_device_ungrab(device, GDK_CURRENT_TIME);
     return TRUE;
 }
 
@@ -514,9 +518,10 @@ HandleMotionNotify(GtkWidget *widget, GdkEventMotion *event)
             }
             /* If we've hit an edge of the screen, warp to the opposite edge */
             if (warpToX >= 0 && warpToY >= 0) {
-                gdk_display_warp_pointer(gtk_widget_get_display(widget),
-                                         gtk_widget_get_screen(sDrawingArea),
-                                         warpToX, warpToY);
+                /* GTK3: Use gdk_device_warp instead of gdk_display_warp_pointer */
+                GdkDevice *pointer_device = gdk_event_get_device((GdkEvent*)event);
+                gdk_device_warp(pointer_device, gtk_widget_get_screen(sDrawingArea),
+                                warpToX, warpToY);
                 sDragStartX = warpToX;
                 sDragStartY = warpToY;
             }
@@ -623,13 +628,15 @@ void MoveWin2Monitor(int whichmon, int x, int y)
         return;
     }
 
-    GdkScreen* screen = gtk_widget_get_screen(gWin);
-    gint nMonitors = gdk_screen_get_n_monitors(screen);
+    /* GTK3: Use GdkDisplay and GdkMonitor instead of GdkScreen */
+    GdkDisplay *display = gtk_widget_get_display(gWin);
+    gint nMonitors = gdk_display_get_n_monitors(display);
     GdkRectangle rect;
     if (gDebug) {
         printf("Found %d monitors:\n", nMonitors);
         for (gint i=0; i < nMonitors; ++i) {
-            gdk_screen_get_monitor_geometry(screen, i, &rect);
+            GdkMonitor *monitor = gdk_display_get_monitor(display, i);
+            gdk_monitor_get_geometry(monitor, &rect);
             printf("  %d x %d (%d, %d)\n",
                    rect.width, rect.height, rect.x, rect.y);
         }
@@ -638,7 +645,8 @@ void MoveWin2Monitor(int whichmon, int x, int y)
         gtk_window_move(GTK_WINDOW(gWin), x, y);
         return;
     }
-    gdk_screen_get_monitor_geometry(screen, whichmon, &rect);
+    GdkMonitor *target_monitor = gdk_display_get_monitor(display, whichmon);
+    gdk_monitor_get_geometry(target_monitor, &rect);
     if (gDebug)
         printf("Moving to monitor %d\n", nMonitors);
     gtk_window_move(GTK_WINDOW(gWin), rect.x + x, rect.y + y);
@@ -662,7 +670,9 @@ static void NewWindow()
 
     gWin = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
-    gtk_window_set_wmclass(GTK_WINDOW(gWin), "pho", "Pho");
+    /* GTK3: gtk_window_set_wmclass is deprecated with no replacement.
+     * The WM_CLASS is set automatically from the application name.
+     */
 
     /* Window manager delete */
     g_signal_connect(G_OBJECT(gWin), "delete-event",

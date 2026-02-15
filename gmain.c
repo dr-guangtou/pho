@@ -470,8 +470,13 @@ int main(int argc, char** argv)
 
     /* gdk_rgb_init() removed in GTK3 - RGB handling is automatic now */
 
-    gPhysMonitorWidth = gMonitorWidth = gdk_screen_width();
-    gPhysMonitorHeight = gMonitorHeight = gdk_screen_height();
+    /* GTK3: Use monitor API instead of deprecated gdk_screen_width/height */
+    GdkDisplay *display = gdk_display_get_default();
+    GdkMonitor *monitor = gdk_display_get_primary_monitor(display);
+    GdkRectangle geometry;
+    gdk_monitor_get_geometry(monitor, &geometry);
+    gPhysMonitorWidth = gMonitorWidth = geometry.width;
+    gPhysMonitorHeight = gMonitorHeight = geometry.height;
 
     /* Load the first image */
     if (NextImage() != 0)
