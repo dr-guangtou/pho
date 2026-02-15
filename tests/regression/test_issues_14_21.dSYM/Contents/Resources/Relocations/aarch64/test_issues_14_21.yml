@@ -1,0 +1,5 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     'regression/test_issues_14_21'
+relocations:     []
+...
