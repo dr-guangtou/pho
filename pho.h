@@ -161,7 +161,7 @@ extern void SetKeywordsDialogToggle(int which, int newval);
 
 /* Other routines that need to be public */
 extern void PrepareWindow();
-extern void DrawImage();
+extern void DrawImage(cairo_t *cr);
 extern int ScaleAndRotate(PhoImage* img, int degrees);
 
 extern PhoImage* AddImage(char* filename);

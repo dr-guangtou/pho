@@ -118,13 +118,15 @@ static void AdjustScreenSize()
         gMonitorHeight = gPhysMonitorHeight - sFrameHeight;
     }
 
-    ScaleAndRotate(gCurImage, 0);
+    if (gCurImage)
+        ScaleAndRotate(gCurImage, 0);
 }
 
 static void CenterWindow(GtkWidget* win)
 {
     gint w, h;
     if (gDebug) printf("CenterWindow\n");
+    if (!gCurImage) return;  /* No image to center */
     gtk_window_get_size(GTK_WINDOW(gWin), &w, &h);
     gtk_window_set_gravity(GTK_WINDOW(win), GDK_GRAVITY_CENTER);
     gtk_window_move(GTK_WINDOW(win),
@@ -143,6 +145,7 @@ static void MaybeMove()
     gint x, y, w, h, nx, ny;
 
     if (gDebug) printf("MaybeMove\n");
+    if (!gCurImage) return;  /* No image to position */
     if (gCurImage->curWidth > gPhysMonitorWidth
         || gCurImage->curHeight > gPhysMonitorHeight)
         return;
@@ -288,30 +291,29 @@ int SetViewModes(int dispmode, int scalemode, double scalefactor)
 /* DrawImage is called from the expose callback.
  * It assumes we already have the image in gImage.
  */
-void DrawImage()
+void DrawImage(cairo_t *cr)
 {
     int dstX = 0, dstY = 0;
     char title[BUFSIZ];
 #   define TITLELEN ((sizeof title) / (sizeof *title))
+
+    /* Check all required objects before proceeding */
+    if (gCurImage == 0 || gImage == 0 || gWin == 0 || sDrawingArea == 0) return;
+    if (!sExposed) return;
+    if (!gtk_widget_get_mapped(gWin)) return;
+    if (!gtk_widget_get_realized(sDrawingArea)) return;
+    if (!gtk_widget_get_visible(sDrawingArea)) return;
 
     if (gDebug) {
         printf("DrawImage %s, %dx%d\n", gCurImage->filename,
                gCurImage->curWidth, gCurImage->curHeight);
     }
 
-    if (gImage == 0 || gWin == 0 || sDrawingArea == 0) return;
-    if (!sExposed) return;
-    if (!gtk_widget_get_mapped(gWin)) return;
-
     if (gDisplayMode == PHO_DISPLAY_PRESENTATION) {
         gint width, height;
-        /* GTK3: Use cairo to clear window background (via drawing frame API) */
-        GdkWindow *window = gtk_widget_get_window(sDrawingArea);
-        GdkDrawingContext *context = gdk_window_begin_draw_frame(window, NULL);
-        cairo_t *cr = gdk_drawing_context_get_cairo_context(context);
+        /* GTK3: Clear background using the provided cairo context */
         cairo_set_source_rgb(cr, 0, 0, 0);
         cairo_paint(cr);
-        gdk_window_end_draw_frame(window, context);
 
         /* Center the image. This has to be done according to
          * the current window size, not the phys monitor size,
@@ -420,13 +422,9 @@ void DrawImage()
         }
     }
 
-    /* GTK3: Use Cairo for drawing (via drawing frame API) */
-    GdkWindow *draw_window = gtk_widget_get_window(sDrawingArea);
-    GdkDrawingContext *draw_context = gdk_window_begin_draw_frame(draw_window, NULL);
-    cairo_t *cr = gdk_drawing_context_get_cairo_context(draw_context);
+    /* GTK3: Draw the image using the provided cairo context */
     gdk_cairo_set_source_pixbuf(cr, gImage, dstX, dstY);
     cairo_paint(cr);
-    gdk_window_end_draw_frame(draw_window, draw_context);
 
     UpdateInfoDialog(gCurImage);
 }
@@ -528,7 +526,7 @@ HandleMotionNotify(GtkWidget *widget, GdkEventMotion *event)
         }
 
         /* This flickers: would be nice to collapse events more */
-        DrawImage();
+        gtk_widget_queue_draw(sDrawingArea);
     }
 
     return TRUE;
@@ -546,11 +544,14 @@ static gboolean HandleExpose(GtkWidget* widget, cairo_t *cr)
     height = gtk_widget_get_allocated_height(widget);
     if (gDebug) {
         cairo_rectangle_int_t clip_rect;
-        gdk_cairo_get_clip_rectangle(cr, (GdkRectangle*)&clip_rect);
-        printf("HandleExpose: clip %dx%d +%d+%d in window %dx%d\n",
-               clip_rect.width, clip_rect.height,
-               clip_rect.x, clip_rect.y,
-               width, height);
+        if (gdk_cairo_get_clip_rectangle(cr, (GdkRectangle*)&clip_rect)) {
+            printf("HandleExpose: clip %dx%d +%d+%d in window %dx%d\n",
+                   clip_rect.width, clip_rect.height,
+                   clip_rect.x, clip_rect.y,
+                   width, height);
+        } else {
+            printf("HandleExpose: no clip rect in window %dx%d\n", width, height);
+        }
     }
 
     /* If a specific monitor was specified, move the window now.
@@ -577,7 +578,7 @@ static gboolean HandleExpose(GtkWidget* widget, cairo_t *cr)
         int oldw = sFrameWidth;
         int oldh = sFrameHeight;
         AdjustScreenSize();
-        if (sFrameWidth != oldw || sFrameHeight != oldh) {
+        if (gCurImage && (sFrameWidth != oldw || sFrameHeight != oldh)) {
             gtk_window_resize(GTK_WINDOW(gWin),
                               gCurImage->curWidth, gCurImage->curHeight);
             /* Since we resized, we might no longer be over the cursor
@@ -587,7 +588,7 @@ static gboolean HandleExpose(GtkWidget* widget, cairo_t *cr)
         }
     }
 
-    DrawImage();
+    DrawImage(cr);
 
     return TRUE;
 }
@@ -722,8 +723,10 @@ static void NewWindow()
                            G_CALLBACK(HandleMotionNotify), 0);
     }
     else {
-        gtk_widget_set_size_request(sDrawingArea,
-                              gCurImage->curWidth, gCurImage->curHeight);
+        if (gCurImage) {
+            gtk_widget_set_size_request(sDrawingArea,
+                                  gCurImage->curWidth, gCurImage->curHeight);
+        }
         gtk_window_unfullscreen(GTK_WINDOW(gWin));
     }
 
@@ -817,8 +820,8 @@ void PrepareWindow()
          * Likewise, if the next line doesn't actually resize anything
          * we may not get an expose event.
          */
-        if (gCurImage->curWidth != winwidth
-            || gCurImage->curHeight != winheight) {
+        if (gCurImage && (gCurImage->curWidth != winwidth
+            || gCurImage->curHeight != winheight)) {
             gtk_window_resize(GTK_WINDOW(gWin),
                               gCurImage->curWidth, gCurImage->curHeight);
 
@@ -837,11 +840,11 @@ void PrepareWindow()
              */
             winwidth = gtk_widget_get_allocated_width(sDrawingArea);
             winheight = gtk_widget_get_allocated_height(sDrawingArea);
-            if (gCurImage->curWidth != winwidth
-                || gCurImage->curHeight != winheight) {
+            if (gCurImage && (gCurImage->curWidth != winwidth
+                || gCurImage->curHeight != winheight)) {
                 if (gDebug)
                     printf("Resize didn't work! Forcing redraw\n");
-                DrawImage();
+                gtk_widget_queue_draw(sDrawingArea);
             }
         }
 
@@ -853,7 +856,7 @@ void PrepareWindow()
          * transient too early. (I hate window management.)
          */
         else if (gtk_widget_get_visible(gWin)) {
-            DrawImage();
+            gtk_widget_queue_draw(sDrawingArea);
         }
 
         /* Try to ensure that the window will be over the cursor

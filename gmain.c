@@ -472,7 +472,19 @@ int main(int argc, char** argv)
 
     /* GTK3: Use monitor API instead of deprecated gdk_screen_width/height */
     GdkDisplay *display = gdk_display_get_default();
+    if (!display) {
+        fprintf(stderr, "Error: Cannot get default display\n");
+        exit(1);
+    }
     GdkMonitor *monitor = gdk_display_get_primary_monitor(display);
+    if (!monitor) {
+        /* Fallback: try to get the first monitor */
+        monitor = gdk_display_get_monitor(display, 0);
+    }
+    if (!monitor) {
+        fprintf(stderr, "Error: Cannot get monitor information\n");
+        exit(1);
+    }
     GdkRectangle geometry;
     gdk_monitor_get_geometry(monitor, &geometry);
     gPhysMonitorWidth = gMonitorWidth = geometry.width;

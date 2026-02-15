@@ -62,6 +62,7 @@ static gint DelayTimer(gpointer data)
 
 int ShowImage()
 {
+    if (!gCurImage) return -1;
     ScaleAndRotate(gCurImage, 0);
     /* Keywords dialog will be updated if necessary from DrawImage */
 
@@ -447,6 +448,8 @@ void ScaleToFit(int *width, int *height,
  */
 int ScaleAndRotate(PhoImage* img, int degrees)
 {
+    if (!img) return -1;  /* NULL image */
+    
 #define true_width img->trueWidth
 #define true_height img->trueHeight
     int new_width;
