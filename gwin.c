@@ -65,9 +65,12 @@ static gboolean raise_window_idle(gpointer data)
 {
     (void)data; /* unused */
     if (gWin && gtk_widget_get_realized(gWin)) {
-        /* Option 1: Force keep-above temporarily to steal focus */
+        /* Force keep-above temporarily to steal focus */
         gtk_window_set_keep_above(GTK_WINDOW(gWin), TRUE);
         gtk_window_present(GTK_WINDOW(gWin));
+        
+        /* Try to grab keyboard focus */
+        gtk_widget_grab_focus(gWin);
         
         /* Immediately remove keep-above so window behaves normally */
         gtk_window_set_keep_above(GTK_WINDOW(gWin), FALSE);
