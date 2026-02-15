@@ -57,6 +57,25 @@ static int sExposed = 0;
 static void NewWindow();
 static void MoveWin2Monitor(int whichmon, int x, int y);
 
+/* Callback to raise window after it's been shown.
+ * This needs to run as an idle callback so the window is fully
+ * realized and mapped before we try to raise it on macOS.
+ */
+static gboolean raise_window_idle(gpointer data)
+{
+    (void)data; /* unused */
+    if (gWin && gtk_widget_get_realized(gWin)) {
+        GdkWindow *window = gtk_widget_get_window(gWin);
+        if (window) {
+            /* Try multiple approaches to ensure window comes to front */
+            gdk_window_raise(window);
+            gdk_window_focus(window, GDK_CURRENT_TIME);
+        }
+        gtk_window_present(GTK_WINDOW(gWin));
+    }
+    return G_SOURCE_REMOVE; /* Run only once */
+}
+
 static void hide_cursor(GtkWidget* w)
 {
     static GdkCursor* cursor = 0;
@@ -738,17 +757,11 @@ static void NewWindow()
 
     gtk_widget_show(gWin);
 
-    /* Bring window to front and give it focus
-     * On macOS with Quartz backend, we need to ensure the window is realized
-     * and use both present and raise to reliably bring it to front.
+    /* Schedule window to be raised after main loop processes events.
+     * This is necessary on macOS where the window needs to be fully
+     * mapped before it can be properly raised to the front.
      */
-    gtk_widget_realize(gWin);
-    GdkWindow *window = gtk_widget_get_window(gWin);
-    if (window) {
-        gdk_window_raise(window);
-        gdk_window_focus(window, GDK_CURRENT_TIME);
-    }
-    gtk_window_present(GTK_WINDOW(gWin));
+    g_idle_add(raise_window_idle, NULL);
 
     /* Must come after show(), hide_cursor needs a window */
     if (gDisplayMode == PHO_DISPLAY_PRESENTATION)
