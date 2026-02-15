@@ -111,9 +111,9 @@ $ otool -L pho | grep gtk
 - [x] All tests passing
 - [x] Runtime tested with actual images
 - [x] Documentation updated (README.md, plan.md, todo.md)
-- [ ] Linux platform verification
-- [ ] Merge to main branch
+- [x] Merge to master branch ✅
 - [ ] Create release tag
+- [ ] Linux platform verification (📌 Pinned - not required for current use)
 
 ---
 

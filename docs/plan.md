@@ -97,10 +97,10 @@ Pho has been successfully migrated from GTK+ 2.0 to GTK+ 3.0. All 47 GTK2→GTK3
 - **Segfault on image open**: Fixed by using cairo context from draw signal handler instead of creating nested GdkDrawingContext
 
 #### Post-Migration Tasks
-- [ ] Linux platform verification
-- [ ] Merge `gtk3-migration-phase1` branch to `main`
+- [x] Merge `gtk3-migration-phase1` branch to `master` ✅
 - [ ] Create release tag
 - [ ] Update package managers (Homebrew, etc.)
+- [ ] Linux platform verification (📌 Pinned - not required for current use)
 
 ---
 
