@@ -58,20 +58,19 @@ static void NewWindow();
 static void MoveWin2Monitor(int whichmon, int x, int y);
 
 /* Callback to raise window after it's been shown.
- * This needs to run as an idle callback so the window is fully
- * realized and mapped before we try to raise it on macOS.
+ * Uses a "keep above" hack to force window to front on macOS,
+ * then immediately removes the keep-above state.
  */
 static gboolean raise_window_idle(gpointer data)
 {
     (void)data; /* unused */
     if (gWin && gtk_widget_get_realized(gWin)) {
-        GdkWindow *window = gtk_widget_get_window(gWin);
-        if (window) {
-            /* Try multiple approaches to ensure window comes to front */
-            gdk_window_raise(window);
-            gdk_window_focus(window, GDK_CURRENT_TIME);
-        }
+        /* Option 1: Force keep-above temporarily to steal focus */
+        gtk_window_set_keep_above(GTK_WINDOW(gWin), TRUE);
         gtk_window_present(GTK_WINDOW(gWin));
+        
+        /* Immediately remove keep-above so window behaves normally */
+        gtk_window_set_keep_above(GTK_WINDOW(gWin), FALSE);
     }
     return G_SOURCE_REMOVE; /* Run only once */
 }
